@@ -328,7 +328,7 @@ public abstract class AbstractMetricSource implements Constants, Serializable {
 		}
 	}
 
-	protected void save() {
+	public void save() {
 		detachChildren();
 		Cache.singleton.put(this);
 	}

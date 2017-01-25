@@ -36,6 +36,10 @@ import net.sourceforge.metrics.core.sources.AbstractMetricSource;
  */
 public class Reusability extends Calculator implements Constants {
 
+	
+	public static String s = "REU";
+	public static double value;
+	
 	/**
 	 * Constructor for REU.
 	 */

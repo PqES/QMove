@@ -647,5 +647,18 @@ public class MetricsView extends ViewPart implements ISelectionListener, IMetric
 	public void paused() {
 		setStatus("Paused. " + queued + " items in the queue.", false);
 	}
+	
+	public void refreshMetrics(final AbstractMetricSource ms, final IJavaElement selection) {
+		final Display display = Display.getDefault();
+		display.asyncExec(new Runnable() {
+			public void run() {
+				if (!table.isDisposed()) {
+					table.setMetrics(ms);
+					table.setCursor(getNormalCursor(table.getDisplay()));
+					setPartName(getTitlePrefix(selection).toString());
+				}
+			}
+		});
+	}
 
 }

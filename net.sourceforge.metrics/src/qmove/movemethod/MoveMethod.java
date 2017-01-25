@@ -2,6 +2,7 @@ package qmove.movemethod;
 
 import java.util.ArrayList;
 
+
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.resources.ResourcesPlugin;
@@ -23,6 +24,8 @@ import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 import org.eclipse.ltk.core.refactoring.participants.MoveRefactoring;
 import org.eclipse.ui.handlers.HandlerUtil;
 
+
+
 import net.sourceforge.metrics.core.Metric;
 import net.sourceforge.metrics.core.sources.AbstractMetricSource;
 import net.sourceforge.metrics.core.sources.Dispatcher;
@@ -35,8 +38,7 @@ public class MoveMethod {
 	private MethodMetric candidateChosen;
 
 	
-	public MethodsChosen startRefactoring(IMethod method, ExecutionEvent event, Metric[] metricsOriginal) throws OperationCanceledException, CoreException {
-		
+	public MethodsChosen startRefactoring(IMethod method, ExecutionEvent event, Metric[] metricsOriginal) throws OperationCanceledException, CoreException, InterruptedException {
 		
 		
 		MoveInstanceMethodProcessor processor = new MoveInstanceMethodProcessor(method,
@@ -72,21 +74,19 @@ public class MoveMethod {
 						RefactoringStatus.FATAL);
 			
 			PerformChangeOperation perform = new PerformChangeOperation(create);
-
+			
 			IWorkspace workspace = ResourcesPlugin.getWorkspace();
-			workspace.run(perform, new NullProgressMonitor()); //move o método para calcular métricas
-	 
-		    
+			workspace.run(perform, new NullProgressMonitor()); //move o mï¿½todo para calcular mï¿½tricas
+			
+			Thread.sleep(1000);
 			TreeSelection selection = (TreeSelection)HandlerUtil.getCurrentSelection(event);
 		    IJavaElement je = (IJavaElement) selection.getFirstElement();
 		    AbstractMetricSource ms = Dispatcher.getAbstractMetricSource(je);
-			Metric[] metricsModified = QMoodMetrics.getQMoodMetrics(ms); //calcula as metricas apos mover método
+			Metric[] metricsModified = QMoodMetrics.getQMoodMetrics(ms); //calcula as metricas apos mover mï¿½todo
 			
-			
-		
 			
 			Change undoChange = perform.getUndoChange();
-			undoChange.perform(new NullProgressMonitor()); //move o método para a classe original
+			undoChange.perform(new NullProgressMonitor()); //move o mï¿½todo para a classe original
 			//RefactoringStatus conditionCheckingStatus = create.getConditionCheckingStatus();
 			
 			if(checkIfSomeMetricDecrease(metricsOriginal, metricsModified)) continue;
@@ -186,3 +186,23 @@ public class MoveMethod {
 			workspace2.run(perform2, new NullProgressMonitor());
 	}*/
 }
+
+/*class RunWorkspace implements Runnable {
+    
+	PerformChangeOperation perform;
+	
+	public RunWorkspace(PerformChangeOperation perform){
+		this.perform = perform;
+	}
+	
+	public void run() {
+		IWorkspace workspace = ResourcesPlugin.getWorkspace();
+		try {
+			workspace.run(perform, new NullProgressMonitor());
+		} catch (CoreException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} //move o mï¿½todo para calcular mï¿½tricas
+		
+    }
+}*/
