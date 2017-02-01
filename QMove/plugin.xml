@@ -1,0 +1,738 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+  
+   <extension-point id="exporters" name="exporters" schema="schema/exporters.exsd"/>
+   <extension-point id="metrics" name="metrics" schema="schema/metrics.exsd"/>
+
+   <extension
+         point="org.eclipse.ui.views">
+      <category
+            name="Metrics"
+            id="QMove">
+      </category>
+      <view
+            name="Metrics View"
+            icon="icons/mview.gif"
+            category="QMove"
+            class="net.sourceforge.metrics.ui.MetricsView"
+            id="net.sourceforge.metrics.ui.MetricsView">
+      </view>
+      <view
+            name="Dependency Graph View"
+            icon="icons/gview.gif"
+            category="QMove"
+            class="net.sourceforge.metrics.ui.DependencyGraphView"
+            id="net.sourceforge.metrics.ui.DependencyGraphView">
+      </view>
+      <view
+            allowMultiple="true"
+            icon="icons/mview.gif"
+            class="net.sourceforge.metrics.ui.layeredpackagegraph.LayeredPackageTableView"
+            category="QMove"
+            name="Layered Package Table View"
+            id="net.sourceforge.metrics.ui.layeredpackagegraph.LayeredPackageTableView"/>
+      <view
+            icon="icons/gview.gif"
+            class="net.sourceforge.metrics.ui.layeredpackagegraph.LayeredPackageGraphView"
+            category="QMove"
+            name="Layered Package Graph View"
+            id="net.sourceforge.metrics.ui.layeredpackagegraph.LayeredPackageGraphView"/>
+      <view
+            category="QMove"
+            class="qmove.views.QMoveView"
+            icon="icons/sample.gif"
+            id="qmove.views.QMoveView"
+            name="QMove">
+      </view>
+   </extension>
+   <extension
+         id="nature"
+         name="Metrics Nature"
+         point="org.eclipse.core.resources.natures">
+      <runtime>
+         <run
+               class="net.sourceforge.metrics.builder.MetricsNature">
+         </run>
+      </runtime>
+   </extension>
+   <extension
+         id="builder"
+         name="Metrics Builder"
+         point="org.eclipse.core.resources.builders">
+      <builder>
+         <run
+               class="net.sourceforge.metrics.builder.MetricsBuilder">
+         </run>
+      </builder>
+   </extension>
+   <extension
+         point="org.eclipse.help.toc">
+      <toc
+            file="toc.xml"
+            primary="true">
+      </toc>
+      <toc
+            file="tocconcepts.xml">
+      </toc>
+      <toc
+            file="tocgettingstarted.xml">
+      </toc>
+      <toc
+            file="tocapi.xml">
+      </toc>
+   </extension>
+   <extension
+         point="org.eclipse.ui.preferencePages">
+      <page
+            name="Metrics Preferences"
+            class="net.sourceforge.metrics.ui.preferences.MetricsPreferencePage"
+            id="net.sourceforge.metrics.ui.MetricsPreferencePage">
+      </page>
+      <page
+            name="NORM"
+            category="net.sourceforge.metrics.ui.MetricsPreferencePage"
+            class="net.sourceforge.metrics.ui.preferences.NORMPreferencePage"
+            id="QMove.norm">
+      </page>
+      <page
+            name="LCOM*"
+            category="QMove.ui.MetricsPreferencePage"
+            class="QMove.ui.preferences.LCOMPreferencePage"
+            id="QMove.lcom">
+      </page>
+      <page
+            name="Safe Ranges"
+            category="net.sourceforge.metrics.ui.MetricsPreferencePage"
+            class="net.sourceforge.metrics.ui.preferences.RangePage"
+            id="QMove.rangeeditor">
+      </page>
+      <page
+            name="XML Export"
+            category="net.sourceforge.metrics.ui.MetricsPreferencePage"
+            class="net.sourceforge.metrics.ui.preferences.XMLExportPage"
+            id="QMove.xmlexport">
+      </page>
+      <page
+            name="Colors"
+            category="net.sourceforge.metrics.ui.MetricsPreferencePage"
+            class="net.sourceforge.metrics.ui.preferences.ColorPreferencePage"
+            id="QMove.colors">
+      </page>
+   </extension>
+   <extension
+         id="outofrangemarker"
+         name="MetricsOutOfRangeMarker"
+         point="org.eclipse.core.resources.markers">
+      <super
+            type="org.eclipse.core.resources.problemmarker">
+      </super>
+      <attribute
+            name="metric">
+      </attribute>
+      <attribute
+            name="value">
+      </attribute>
+      <persistent
+            value="true">
+      </persistent>
+   </extension>
+   <extension
+         id="coremetrics"
+         name="Core Metrics"
+         point="QMove.metrics">
+         <!--
+      <metric
+            name="Lines of Code"
+            id="LOC"
+            level="method">
+         <range
+               max="50"
+               hint="use Extract-method to split the method up">
+         </range>
+      </metric>
+      -->
+      <metric
+            propagateSum="false"
+            name="McCabe Cyclomatic Complexity"
+            id="VG"
+            level="method">
+         <range
+               max="10"
+               hint="use Extract-method to split the method up">
+         </range>
+      </metric>
+      <metric
+            propagateSum="false"
+            name="Number of Parameters"
+            id="PAR"
+            level="method">
+         <range
+               max="5"
+               hint="Move invoked method or pass an object">
+         </range>
+      </metric>
+      <metric
+            propagateSum="false"
+            name="Nested Block Depth"
+            id="NBD"
+            level="method">
+         <range
+               max="5"
+               hint="use Extract-method to split the method up">
+         </range>
+      </metric>
+      <metric
+            propagateSum="false"
+            name="Afferent Coupling"
+            id="CA"
+            level="packageFragment">
+      </metric>
+      <metric
+            propagateSum="false"
+            name="Efferent Coupling"
+            id="CE"
+            level="packageFragment">
+      </metric>
+      <metric
+            propagateSum="false"
+            name="Instability"
+            requires="CE,CA"
+            id="RMI"
+            level="packageFragment">
+      </metric>
+      <metric
+            propagateSum="false"
+            name="Abstractness"
+            id="RMA"
+            level="packageFragment">
+      </metric>
+      <metric
+            propagateSum="false"
+            name="Normalized Distance"
+            requires="RMA,RMI"
+            id="RMD"
+            level="packageFragment">
+      </metric>
+      <metric
+            propagateSum="false"
+            name="Depth of Inheritance Tree"
+            id="DIT"
+            level="type">
+      </metric>
+      <!--
+      <metric
+            sumOf="LOC"
+            name="Lines of Code"
+            requires="LOC"
+            id="LOCC"
+            level="type">
+         <range
+               max="750"
+               hint="Split up the class and use delegation">
+         </range>
+      </metric>
+      -->
+      <metric
+            sumOf="VG"
+            name="Weighted methods per Class"
+            requires="VG"
+            id="WMC"
+            level="type">
+      </metric>
+      <metric
+            name="Number of Children"
+            id="NSC"
+            level="type">
+      </metric>
+      <metric
+            name="Number of Overridden Methods"
+            id="NORM"
+            level="type">
+      </metric>
+      <metric
+            propagateSum="false"
+            name="Lack of Cohesion of Methods"
+            id="LCOM"
+            level="type">
+      </metric>
+      <metric
+            name="Number of Attributes"
+            id="NOF"
+            level="type">
+      </metric>
+      <metric
+            name="Number of Static Attributes"
+            id="NSF"
+            level="type">
+      </metric>
+      <metric
+            name="Number of Methods"
+            id="NOM"
+            level="type">
+      </metric>
+      <metric
+            id="NONM"
+            level="type"
+            name="Number of Normal Methods"
+            newAvgMaxAt="packageFragmentRoot">
+      </metric>
+      <metric
+            name="Number of Static Methods"
+            id="NSM"
+            level="type">
+      </metric>
+      <metric
+            propagateSum="false"
+            name="Specialization Index"
+            requires="NOM,NORM,DIT"
+            id="SIX"
+            level="type">
+      </metric>
+      <metric
+            allowDisable="false"
+            name="Number of Classes"
+            propagateAvg="false"
+            newAvgMaxAt="packageFragmentRoot"
+            propagateMax="false"
+            id="NOC"
+            level="compilationUnit">
+      </metric>
+      <metric
+            allowDisable="false"
+            name="Number of Interfaces"
+            propagateAvg="false"
+            newAvgMaxAt="packageFragmentRoot"
+            propagateMax="false"
+            id="NOI"
+            level="compilationUnit">
+      </metric>
+      <metric
+            allowDisable="false"
+            name="Number of Packages"
+            id="NOP"
+            level="packageFragmentRoot">
+      </metric>
+<!-- calculators -->
+<!--
+      <calculator
+            name="Lines of Code"
+            calculatorClass="net.sourceforge.metrics.calculators.LinesOfCode"
+            level="method">
+      </calculator>
+-->
+      <calculator
+            name="McCabe Cyclomatic Complexity"
+            calculatorClass="net.sourceforge.metrics.calculators.McCabe"
+            level="method">
+      </calculator>
+      <calculator
+            name="Number of Parameters"
+            calculatorClass="net.sourceforge.metrics.calculators.NumberOfParameters"
+            level="method">
+      </calculator>
+      <calculator
+            name="Nested Block Depth"
+            calculatorClass="net.sourceforge.metrics.calculators.NestedBlockDepth"
+            level="method">
+      </calculator>
+      <calculator
+            name="Inheritance Depth"
+            calculatorClass="net.sourceforge.metrics.calculators.InheritanceDepth"
+            level="type">
+      </calculator>
+      <calculator
+            name="Lack of Cohesion of Methods"
+            calculatorClass="net.sourceforge.metrics.calculators.LackOfCohesion"
+            level="type">
+      </calculator>
+      <calculator
+            name="Number of Overridden Methods"
+            calculatorClass="net.sourceforge.metrics.calculators.Norm"
+            level="type">
+      </calculator>
+      <calculator
+            name="Number of Attributes"
+            calculatorClass="net.sourceforge.metrics.calculators.NumberOfAttributes"
+            level="type">
+      </calculator>
+      <calculator
+            name="Number of Methods"
+            calculatorClass="net.sourceforge.metrics.calculators.NumberOfMethods"
+            level="type">
+      </calculator>
+      <calculator
+            name="SpecializationIndex"
+            calculatorClass="net.sourceforge.metrics.calculators.SpecializationIndex"
+            level="type">
+      </calculator>
+      <calculator
+            name="RMartinCouplings"
+            calculatorClass="net.sourceforge.metrics.calculators.RMartinCouplings"
+            level="packageFragment">
+      </calculator>
+      <!-- G.B. -->
+      <calculator
+            level="compilationUnit"
+            calculatorClass="net.sourceforge.metrics.calculators.TotalLinesOfCode"
+            name="Computation for total lines of code"/>
+      <metric
+            level="compilationUnit"
+            name="Total Lines of Code"
+            id="TLOC"
+            allowDisable="true"/>
+      <calculator
+            level="method"
+            calculatorClass="net.sourceforge.metrics.calculators.MethodLinesOfCode"
+            name="New Computation for methods lines of code"/>
+      <metric
+            level="method"
+            name="Method Lines of Code"
+            id="MLOC"
+            allowDisable="true"/>
+      <!-- QMOOD -->
+      <metric
+            id="DSC"
+            level="compilationUnit"
+            name="Design Size in Classes"
+            propagateAvg="false"
+            propagateMax="false"
+            propagateSum="true"
+            allowDisable="false"
+            >
+      </metric>
+      <calculator
+            calculatorClass="net.sourceforge.metrics.calculators.qmood.AverageNumberOfAncestors"
+            level="project"
+            name="Average Number of Ancestors">
+      </calculator>
+      <metric
+            id="ANA"
+            level="project"
+            name="Average Number of Ancestors"
+            propagateAvg="false"
+            propagateMax="false"
+            propagateSum="false"
+            requires="DIT">
+      </metric>
+      <calculator
+            calculatorClass="net.sourceforge.metrics.calculators.qmood.MeasureOfFunctionalAbstraction"
+            level="type"
+            name="Measure Of Functional Abstraction">
+      </calculator>
+      <metric
+            id="MFA"
+            level="type"
+            name="Measure of Functional Abstraction"
+            newAvgMaxAt="packageFragmentRoot">
+      </metric>
+      <metric
+            allowDisable="false"
+            id="CIS"
+            level="type"
+            name="Class Interface Size"
+            newAvgMaxAt="packageFragmentRoot"
+            requires="NOM">
+      </metric>
+      <metric
+            allowDisable="false"
+            id="MOA"
+            level="type"
+            name="Measure of Aggregation"
+            newAvgMaxAt="packageFragmentRoot"
+            requires="NOF">
+      </metric>
+      <metric
+            allowDisable="false"
+            id="DAM"
+            level="type"
+            name="Data Access Metric"
+            newAvgMaxAt="packageFragmentRoot"
+            requires="NOF">
+      </metric>
+      <metric
+            id="NOPM"
+            level="type"
+            name="Number of Polymorphic Methods"
+            newAvgMaxAt="packageFragmentRoot"
+            propagateAvg="true"
+            propagateMax="true"
+            propagateSum="true"
+            requires="NOM">
+      </metric>
+      <calculator
+            calculatorClass="net.sourceforge.metrics.calculators.qmood.CohesionAmongMethodsOfClass"
+            level="type"
+            name="Cohesion Among Methods of Class">
+      </calculator>
+      <metric
+            allowDisable="false"
+            id="CAM"
+            level="type"
+            name="Cohesion Among Methods of Class"
+            propagateAvg="true"
+            propagateMax="true"
+            propagateSum="true">
+      </metric>
+      <calculator
+            calculatorClass="net.sourceforge.metrics.calculators.qmood.DirectClassCoupling"
+            level="type"
+            name="Direct Class Coupling">
+      </calculator>
+      <metric
+            allowDisable="false"
+            id="DCC"
+            level="type"
+            name="Direct Class Coupling"
+            newAvgMaxAt="packageFragmentRoot"
+            propagateAvg="true"
+            propagateMax="true"
+            propagateSum="true">
+      </metric>
+      <calculator
+            calculatorClass="net.sourceforge.metrics.calculators.qmood.Reusability"
+            level="project"
+            name="Reusability">
+      </calculator>
+      <metric
+            allowDisable="false"
+            id="REU"
+            level="project"
+            name="Reusability"
+            propagateAvg="false"
+            propagateMax="false"
+            propagateSum="false"
+            requires="DCC, CAM, CIS, DSC">
+      </metric>
+      <calculator
+            calculatorClass="net.sourceforge.metrics.calculators.qmood.Flexibility"
+            level="project"
+            name="Flexibility">
+      </calculator>
+      <metric
+            id="FLE"
+            level="project"
+            name="Flexibility"
+            propagateAvg="false"
+            propagateMax="false"
+            propagateSum="false"
+            allowDisable="false"
+            requires="DAM, DCC, MOA, NOPM">
+      </metric>
+      <calculator
+            calculatorClass="net.sourceforge.metrics.calculators.qmood.Effectiveness"
+            level="project"
+            name="Effectiveness">
+      </calculator>
+      <metric
+            id="EFE"
+            level="project"
+            name="Effectiveness"
+            propagateAvg="false"
+            propagateMax="false"
+            propagateSum="false"
+            requires="ANA,DAM,MOA,MFA,NOPM">
+      </metric>      
+      <calculator
+            calculatorClass="net.sourceforge.metrics.calculators.qmood.Extendibility"
+            level="project"
+            name="Extendibility">
+      </calculator>
+      <metric
+            id="EXT"
+            level="project"
+            name="Extendibility"
+            propagateAvg="false"
+            propagateMax="false"
+            propagateSum="false"
+            requires="ANA, DCC, MFA, NOPM">
+      </metric>
+      <calculator
+            calculatorClass="net.sourceforge.metrics.calculators.qmood.Functionality"
+            level="project"
+            name="Functionality">
+      </calculator>
+      <metric
+            id="FUN"
+            level="project"
+            name="Functionality"
+            propagateAvg="false"
+            propagateMax="false"
+            propagateSum="false"
+            requires="CAM, NOPM, CIS, DSC, NOH">
+      </metric>
+      <calculator
+            calculatorClass="net.sourceforge.metrics.calculators.qmood.Understandability"
+            level="project"
+            name="Understandability">
+      </calculator>
+      <metric
+            allowDisable="false"
+            id="ENT"
+            level="project"
+            name="Understandability"
+            propagateAvg="false"
+            propagateMax="false"
+            propagateSum="false"
+            requires="ANA, DAM, DCC, CAM, NOPM, NONM, DSC">
+      </metric>
+      <calculator
+            calculatorClass="net.sourceforge.metrics.calculators.qmood.NumberOfHierarchies"
+            level="type"
+            name="Number of Hierarchies">
+      </calculator>
+      <metric
+            allowDisable="false"
+            id="NOH"
+            level="type"
+            name="Number of Hierarchies"
+            propagateAvg="false"
+            propagateMax="false"
+            >
+      </metric>
+   </extension>
+   <extension
+         point="QMove.exporters">
+      <exporter
+            name="Metrics flat"
+            namespace="http://metrics.sourceforge.net/2003/Metrics-First-Flat"
+            description="exports each metric with a flat list of values for the appropriate descendants"
+            class="net.sourceforge.metrics.internal.xml.MetricsFirstExporter">
+      </exporter>
+      <exporter
+            name="Windows Compliant"
+            namespace="http://metrics.sourceforge.net/2003/Metrics-First-Flat"
+            description="exports each metric with a flat list of values for the appropriate descendants compatible with windows naming schema"
+            class="net.sourceforge.metrics.internal.xml.WinCompliantExporter">
+      </exporter>
+      <exporter
+            name="Source tree"
+            namespace="http://metrics.sourceforge.net/2003/Source-hierarchical"
+            description="exports the selected element and its subtree, with metrics at each level"
+            class="net.sourceforge.metrics.internal.xml.XMLSourceTreeExporter">
+      </exporter>
+   </extension>
+   <extension
+         point="org.eclipse.ant.core.antTasks">
+      <antTask
+            library="ant-metricstasks.jar"
+            name="eclipse.build"
+            class="net.sourceforge.metrics.ant.ProjectBuild">
+      </antTask>
+      <antTask
+            library="ant-metricstasks.jar"
+            name="metrics.enable"
+            class="net.sourceforge.metrics.ant.EnableMetricsTask">
+      </antTask>
+      <antTask
+            library="ant-metricstasks.jar"
+            name="metrics.export"
+            class="net.sourceforge.metrics.ant.ExportMetricsTask">
+      </antTask>
+   </extension>
+   <extension
+         point="org.eclipse.ui.propertyPages">
+      <page
+            name="Metrics"
+            class="net.sourceforge.metrics.properties.MetricsPropertyPage"
+            nameFilter="*"
+            id="net.sourceforge.metrics.properties.MetricsPropertyPage">
+            <enabledWhen>
+            <instanceof
+                  value="org.eclipse.jdt.core.IJavaProject"/>
+            </enabledWhen>
+      </page>
+   </extension>
+   <extension
+         point="org.eclipse.core.runtime.preferences">
+      <initializer class="net.sourceforge.metrics.core.MetricsPreferenceInitializer"/>
+   </extension>   
+   <extension
+         point="org.eclipse.ui.perspectiveExtensions">
+      <perspectiveExtension targetID="org.eclipse.jdt.ui.JavaPerspective">
+         <viewShortcut id="net.sourceforge.metrics.ui.MetricsView"/>
+         <viewShortcut id="net.sourceforge.metrics.ui.layeredpackagegraph.LayeredPackageTableView"/>
+      </perspectiveExtension>
+      <perspectiveExtension targetID="org.eclipse.jdt.ui.JavaBrowsingPerspective">
+         <viewShortcut id="net.sourceforge.metrics.ui.MetricsView"/>
+         <viewShortcut id="net.sourceforge.metrics.ui.layeredpackagegraph.LayeredPackageTableView"/>
+      </perspectiveExtension>
+      <perspectiveExtension targetID="org.eclipse.pde.ui.PDEPerspective">
+         <viewShortcut id="net.sourceforge.metrics.ui.MetricsView"/>
+         <viewShortcut id="net.sourceforge.metrics.ui.layeredpackagegraph.LayeredPackageTableView"/>
+      </perspectiveExtension>
+      <perspectiveExtension
+            targetID="org.eclipse.jdt.ui.JavaPerspective">
+         <view
+               id="qmove.views.QMoveView"
+               ratio="0.5"
+               relationship="right"
+               relative="org.eclipse.ui.views.ProblemView">
+         </view>
+      </perspectiveExtension>
+   </extension>
+   <extension
+         point="org.eclipse.ui.commands">
+      <category
+            id="QMove.commands.category"
+            name="Sample Category">
+      </category>
+      <command
+            categoryId="QMove.commands.category"
+            id="QMove.commands.sampleCommand"
+            name="Sample Command">
+      </command>
+   </extension>
+   <extension
+         point="org.eclipse.ui.handlers">
+      <handler
+            class="qmove.core.QMoveHandler"
+            commandId="QMove.commands.sampleCommand">
+      </handler>
+   </extension>
+   <extension
+         point="org.eclipse.ui.bindings">
+      <key
+            commandId="QMove.commands.sampleCommand"
+            contextId="org.eclipse.ui.contexts.window"
+            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
+            sequence="M1+6">
+      </key>
+   </extension>
+   <extension
+         point="org.eclipse.ui.menus">
+      <menuContribution
+            locationURI="menu:org.eclipse.ui.main.menu?after=additions">
+         <menu
+               id="QMove.menus.sampleMenu"
+               label="QMove"
+               mnemonic="M">
+            <command
+                  commandId="QMove.commands.sampleCommand"
+                  id="QMove.menus.sampleCommand"
+                  label="Start Refactoring..."
+                  mnemonic="S">
+            </command>
+         </menu>
+      </menuContribution>
+      <menuContribution
+            locationURI="toolbar:org.eclipse.ui.main.toolbar?after=additions">
+         <toolbar
+               id="QMove.toolbars.sampleToolbar">
+            <command
+                  commandId="QMove.commands.sampleCommand"
+                  icon="icons/sample.gif"
+                  id="QMove.toolbars.sampleCommand"
+                  tooltip="Say hello world">
+            </command>
+         </toolbar>
+      </menuContribution>
+   </extension>
+   <extension
+         point="org.eclipse.help.contexts">
+      <contexts
+            file="contexts.xml">
+      </contexts>
+   </extension>
+
+</plugin>
