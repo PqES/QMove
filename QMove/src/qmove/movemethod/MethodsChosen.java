@@ -16,16 +16,21 @@ import org.eclipse.ltk.core.refactoring.Refactoring;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 import org.eclipse.ltk.core.refactoring.participants.MoveRefactoring;
 
+import net.sourceforge.metrics.core.Metric;
+
 @SuppressWarnings("restriction")
 public class MethodsChosen {
 	
 	private ClassMethod method;
 	private IVariableBinding targetChosen;
+	private Metric[] metrics;
 	
-	public MethodsChosen(ClassMethod method, IVariableBinding targetChosen){
+
+	public MethodsChosen(ClassMethod method, IVariableBinding targetChosen, Metric[] metrics){
 		
 		this.method = method;
 		this.targetChosen = targetChosen;
+		this.metrics = metrics;
 		
 	}
 	
@@ -43,6 +48,31 @@ public class MethodsChosen {
 	
 	public String getClassOriginal(){
 		return method.getClassName();
+	}
+	
+	public Metric[] getMetrics() {
+		return metrics;
+	}
+	
+	public double calculePercentage(Metric[] metricsOriginal){
+		double mediaMetricsOriginal = (metricsOriginal[0].getValue()+
+										metricsOriginal[1].getValue()+
+										metricsOriginal[2].getValue()+
+										metricsOriginal[3].getValue()+
+										metricsOriginal[4].getValue()+
+										metricsOriginal[5].getValue())/6;
+		
+		double mediaNewMetrics = (metrics[0].getValue()+
+									metrics[1].getValue()+
+									metrics[2].getValue()+
+									metrics[3].getValue()+
+									metrics[4].getValue()+
+									metrics[5].getValue())/6;
+		
+		double percentageIncrease = ((mediaNewMetrics - mediaMetricsOriginal) / mediaMetricsOriginal)*100;
+		
+		return percentageIncrease;
+		
 	}
 	
 	public void move() throws OperationCanceledException, CoreException{

@@ -1,14 +1,20 @@
 package qmove.core;
 
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
+
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 
 import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
 import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IProjectDescription;
+import org.eclipse.core.resources.IWorkspaceRoot;
+import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
@@ -17,15 +23,18 @@ import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.IType;
+import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.handlers.HandlerUtil;
 
+
 import net.sourceforge.metrics.core.Metric;
 import net.sourceforge.metrics.core.sources.AbstractMetricSource;
 import net.sourceforge.metrics.core.sources.Dispatcher;
 import qmove.movemethod.QMoodMetrics;
+import qmove.movemethod.Recommendation;
 import qmove.movemethod.ClassMethod;
 import qmove.movemethod.MethodsChosen;
 import qmove.movemethod.MoveMethod;
@@ -41,8 +50,12 @@ import org.eclipse.jface.viewers.TreeSelection;
 public class QMoveHandler extends AbstractHandler {
 
 	ArrayList<ClassMethod> methods = new ArrayList<ClassMethod>();
-	public static ArrayList<MethodsChosen> methodsMoved = new ArrayList<MethodsChosen>();
+	ArrayList<MethodsChosen> methodsMoved = new ArrayList<MethodsChosen>();
+	public static ArrayList<Recommendation> listRecommendations = new ArrayList<Recommendation>();
+	Metric[] metricsOriginal;
+	ArrayList<ClassMethod> methodsCanBeMoved = new ArrayList<ClassMethod>();
 	AbstractMetricSource ms;
+	IJavaElement jee;
 	IProject p = null;
 
 	@Override
@@ -53,30 +66,69 @@ public class QMoveHandler extends AbstractHandler {
 		} catch (JavaModelException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+		} catch (CoreException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 		
-//		for(int i=0; i<methods.size(); i++){
-//			System.out.println("Class "+methods.get(i).getClassName());
-//			System.out.println("Methods:");
-//			for(int j=0; j<methods.get(i).getMethods().length; j++)
-//				System.out.println(methods.get(i).getMethods()[j]);
-//		}
 		
-		Metric[] metricsOriginal = QMoodMetrics.getQMoodMetrics(ms);
-		MoveMethod checkMove = new MoveMethod(event, metricsOriginal);
-		//ArrayList<MethodsChosen> methodsMoved = new ArrayList<MethodsChosen>();
+		
+		ms = Dispatcher.getAbstractMetricSource(jee);
+	    metricsOriginal = QMoodMetrics.getQMoodMetrics(ms);
+		MoveMethod checkMove = new MoveMethod(jee);
+
+		
+		for(int i=0; i<methods.size(); i++){
+			try {
+				if(checkMove.ckeckIfMethodCanBeMoved(methods.get(i)))
+						methodsCanBeMoved.add(methods.get(i));
+			} catch (OperationCanceledException | CoreException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}	
+		}
+		
 		MethodsChosen aux;
-	    for(int i=0; i<methods.size(); i++){
-	    	//System.out.println("Package: "+methods.get(i).getPackageName()+" Class "+methods.get(i).getClassName());
+	    
+		while(methodsCanBeMoved.size() > 0){
 			
-	    		aux = checkMove.startRefactoring(methods.get(i));
-	    		if(aux != null) methodsMoved.add(aux);
-	    		
-	    	//Map<String, ArrayList<IMethod>> mapMethods = new HashMap<String, ArrayList<IMethod>>();
-		    //mapMethods = qMooveUtils.getClassesMethods(p);
-			//if(aux != null) methodsChosen.add(aux);		
-						
-	    }
+			for(int i=0; i<methodsCanBeMoved.size(); i++){
+	    	
+				aux = checkMove.startRefactoring(methodsCanBeMoved.get(i), metricsOriginal);
+				if(aux != null) methodsMoved.add(aux);		
+			}
+			
+			Metric[] auxMetrics = metricsOriginal;
+			
+			Collections.sort (methodsMoved, new Comparator() {
+	            public int compare(Object o1, Object o2) {
+	                MethodsChosen m1 = (MethodsChosen) o1;
+	                MethodsChosen m2 = (MethodsChosen) o2;
+	                return m1.calculePercentage(auxMetrics) > m2.calculePercentage(auxMetrics) ? -1 : (m1.calculePercentage(auxMetrics) < m2.calculePercentage(auxMetrics) ? +1 : 0);
+	            }
+	        });
+			
+			
+			metricsOriginal = methodsMoved.get(0).getMetrics();
+			
+			try {
+				methodsMoved.get(0).move();
+			} catch (OperationCanceledException | CoreException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+			methodsCanBeMoved.removeIf(methodsCanBeMoved -> methodsCanBeMoved.getMethod() == methodsMoved.get(0).getMethod());
+			
+			listRecommendations.add(new Recommendation (methodsMoved.get(0), methodsMoved.get(0).calculePercentage(auxMetrics)));
+			
+			methodsMoved.removeAll(methodsMoved);
+			
+			
+		}
 	    
 	    
 	    try {
@@ -85,18 +137,21 @@ public class QMoveHandler extends AbstractHandler {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
+	    
+	    
 	     
-	   FileWriter arq;
+	   /*FileWriter arq;
 		try {
 			arq = new FileWriter("C:\\Users\\Public\\Documents\\results.txt");
 			PrintWriter gravarArq = new PrintWriter(arq);
-	    	gravarArq.printf("Method/Actual Class                                       			Class Moved\n");
 	    	for(int i=0;i < methodsMoved.size(); i++){
-	    		gravarArq.printf("%s.%s.%s             %s\n", 
-	    				methodsMoved.get(i).getpackageOriginal(),
-	    				methodsMoved.get(i).getClassOriginal(),
-	    				methodsMoved.get(i).getMethod().getElementName(),
-						methodsMoved.get(i).getTargetChosen().getName());	
+	    		gravarArq.printf("Method: %s.%s.%s\nTo: %s.%s\nIncrease: %s\n\n", 
+	    				listRecommendations.get(i).getPackageMethodName(),
+	    				listRecommendations.get(i).getClassMethodName(),
+	    				listRecommendations.get(i).getMethodName(),
+	    				listRecommendations.get(i).getPackageTargetName(),
+	    				listRecommendations.get(i).getClassTargetName(),
+	    				listRecommendations.get(i).getIncrease());
 		    }
 	    	
 	    	arq.close();
@@ -106,37 +161,36 @@ public class QMoveHandler extends AbstractHandler {
 		} catch (OperationCanceledException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+		}*/
+		
+		IProgressMonitor m = new NullProgressMonitor();
+	    IWorkspaceRoot workspaceRoot = ResourcesPlugin.getWorkspace().getRoot();
+	    IProject project = workspaceRoot.getProject("Temp");
+	    try {
+			project.delete(true, m);
+		} catch (CoreException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
+	    
 		
 		
 		
-//		TreeSelection selection = (TreeSelection)HandlerUtil.getCurrentSelection(event);
-//	    IJavaElement je = (IJavaElement) selection.getFirstElement();
-	    //AbstractMetricSource ms = Dispatcher.getAbstractMetricSource(je);
-		
-	  //  Metric[] metricsOriginal = QMoodMetrics.getQMoodMetrics(event);
-		
-//		try {
-//			getAllMethods(je, event, metricsOriginal);
-//		} catch (CoreException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		} catch (IOException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
-//		
 		return null;
 	}
 	
-	public void getMethods(ExecutionEvent event) throws JavaModelException{
+	public void getMethods(ExecutionEvent event) throws CoreException, InterruptedException{
 		TreeSelection selection = (TreeSelection)HandlerUtil.getCurrentSelection(event);
 	    IJavaElement je = (IJavaElement) selection.getFirstElement();
-	    ms = Dispatcher.getAbstractMetricSource(je);
+//	    ms = Dispatcher.getAbstractMetricSource(je);
 		IJavaProject project = je.getJavaProject();
 	    p = (IProject)project.getResource();
-		if (project.isOpen()) {
-		      IPackageFragment[] packages = project.getPackageFragments();
+	    IJavaProject projectTemp = JavaCore.create(cloneProject());
+	    Thread.sleep(1000);
+	    jee = projectTemp.getPrimaryElement();
+	    Thread.sleep(1000);
+	    if (projectTemp.isOpen()) {
+	    	IPackageFragment[] packages = projectTemp.getPackageFragments();
 		      // parse(JavaCore.create(project));
 		      for (IPackageFragment mypackage : packages) {
 		        if (mypackage.getKind() == IPackageFragmentRoot.K_SOURCE) {
@@ -155,46 +209,46 @@ public class QMoveHandler extends AbstractHandler {
 		
 	}
 	
-	/*public void getAllMethods(IJavaElement je, ExecutionEvent event, Metric[] metricsOriginal) throws CoreException, IOException, OperationCanceledException, InterruptedException{
-		
-		IJavaProject jproj = je.getJavaProject();
-	    IProject p = (IProject)jproj.getResource();
+	public IProject cloneProject() throws CoreException{
+		IProgressMonitor m = new NullProgressMonitor();
+	    IWorkspaceRoot workspaceRoot = ResourcesPlugin.getWorkspace().getRoot();
+	    IProjectDescription projectDescription = p.getDescription();
+	    String cloneName = "Temp";
+	    // create clone project in workspace
+	    IProjectDescription cloneDescription = workspaceRoot.getWorkspace().newProjectDescription(cloneName);
+	    // copy project files
+	    p.copy(cloneDescription, true, m);
+	    IProject clone = workspaceRoot.getProject(cloneName);
 	    
-	    if(!p.isOpen()){
-	    	p.open(null);
-	    }
-	    
-	    Map<String, ArrayList<IMethod>> mapMethods = new HashMap<String, ArrayList<IMethod>>();
-	    
-	    mapMethods = qMooveUtils.getClassesMethods(p);
-		
-	    MoveMethod checkMove = new MoveMethod();
-	    
-	    ArrayList<MethodsChosen> methodsChosen = new ArrayList<MethodsChosen>();
-	    MethodsChosen aux;
-	 
-	    
-	    for (Map.Entry<String, ArrayList<IMethod>> entrada : mapMethods.entrySet()) {
-	    	
-	       	System.out.println(entrada.getKey());
-	       
-	       	   	for(int i=0; i<entrada.getValue().size(); i++){
-	       		System.out.println(entrada.getValue().get(i));
-	       		aux = checkMove.startRefactoring(entrada.getValue().get(i), event, metricsOriginal);
-	       		if(aux != null) methodsChosen.add(aux); 
-	       	}
-		}
-	    
-	    FileWriter arq = new FileWriter("C:\\Users\\Public\\Documents\\results.txt");
-    	PrintWriter gravarArq = new PrintWriter(arq);
-    	gravarArq.printf("Method             Actual Class             Class Moved");
-    	for(int i=0;i < methodsChosen.size(); i++){
-	    	methodsChosen.get(i).move();
-	    	gravarArq.printf("%s             %s             %s", methodsChosen.get(i).getMethod().getSignature(),
-	    														 methodsChosen.get(i).getMethod().getClass().getName(),
-	    														 methodsChosen.get(i).getTargetChosen().getClass().getName());
-	    }
-    	
-    	arq.close();
+	    cloneDescription.setNatureIds(projectDescription.getNatureIds());
+	    cloneDescription.setReferencedProjects(projectDescription.getReferencedProjects());
+	    cloneDescription.setDynamicReferences(projectDescription.getDynamicReferences());
+	    cloneDescription.setBuildSpec(projectDescription.getBuildSpec());
+	    cloneDescription.setReferencedProjects(projectDescription.getReferencedProjects());
+	    clone.setDescription(cloneDescription, null);
+	    clone.open(m);
+	    return clone;
+	}
+	
+	/*public  IProject copyProject(String projectName) throws CoreException {
+	    IProgressMonitor m = new NullProgressMonitor();
+	    IWorkspaceRoot workspaceRoot = ResourcesPlugin.getWorkspace().getRoot();
+	    IProject project = workspaceRoot.getProject(projectName);
+	    IProjectDescription projectDescription = project.getDescription();
+	    String cloneName = "Temp";
+	    // create clone project in workspace
+	    IProjectDescription cloneDescription = workspaceRoot.getWorkspace().newProjectDescription(cloneName);
+	    // copy project files
+	    project.copy(cloneDescription, true, m);
+	    IProject clone = workspaceRoot.getProject(cloneName);
+	    // copy the project properties
+	    cloneDescription.setNatureIds(projectDescription.getNatureIds());
+	    cloneDescription.setReferencedProjects(projectDescription.getReferencedProjects());
+	    cloneDescription.setDynamicReferences(projectDescription.getDynamicReferences());
+	    cloneDescription.setBuildSpec(projectDescription.getBuildSpec());
+	    cloneDescription.setReferencedProjects(projectDescription.getReferencedProjects());
+	    clone.setDescription(cloneDescription, null);
+	    return clone;
 	}*/
+	
 }

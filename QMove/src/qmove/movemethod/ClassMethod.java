@@ -2,6 +2,7 @@ package qmove.movemethod;
 
 import org.eclipse.jdt.core.IMethod;
 
+
 public class ClassMethod {
 	
 	String packageName;
@@ -26,6 +27,4 @@ public class ClassMethod {
 	public IMethod getMethod() {
 		return method;
 	}
-	
-	
 }

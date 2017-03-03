@@ -1,6 +1,7 @@
 package qmove.views;
 
 
+import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.ui.part.*;
 import org.eclipse.jface.viewers.*;
@@ -8,28 +9,12 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
+import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.TableEditor;
 
-import qmove.movemethod.MethodsChosen;
+import qmove.movemethod.Recommendation;
 
-
-/**
- * This sample class demonstrates how to plug-in a new
- * workbench view. The view shows data obtained from the
- * model. The sample creates a dummy model on the fly,
- * but a real implementation would connect to the model
- * available either in this or another plug-in (e.g. the workspace).
- * The view is connected to the model using a content provider.
- * <p>
- * The view uses a label provider to define how model
- * objects should be presented in the view. Each
- * view can present the same model objects using
- * different labels and icons, if needed. Alternatively,
- * a single label provider can be shared between views
- * in order to ensure that objects of the same type are
- * presented in the same way everywhere.
- * <p>
- */
 
 public class QMoveView extends ViewPart{
 
@@ -79,7 +64,7 @@ public class QMoveView extends ViewPart{
         viewer.setContentProvider(new ArrayContentProvider());
         // get the content for the viewer, setInput will call getElements in the
         // contentProvider
-        viewer.setInput(ModelProvider.INSTANCE.getMethods());
+        viewer.setInput(qmove.core.QMoveHandler.listRecommendations);
         // make the selection available to other views
         getSite().setSelectionProvider(viewer);
         // set the sorter for the table
@@ -100,16 +85,16 @@ public class QMoveView extends ViewPart{
 
 	// create the columns for the table
 	private void createColumns(final Composite parent, final TableViewer viewer) {
-        String[] titles = { "Method", "In Class", "Moved To" };
-        int[] bounds = { 100, 100, 100 };
+        String[] titles = { "Method", "To", "Increase" ,"Apply", "More Info"};
+        int[] bounds = { 100, 100, 100, 60, 80};
 
         // first column is for the method
         TableViewerColumn col = createTableViewerColumn(titles[0], bounds[0], 0);
         col.setLabelProvider(new ColumnLabelProvider() {
                 @Override
                 public String getText(Object element) {
-                        MethodsChosen m = (MethodsChosen) element;
-                        return m.getMethod().getElementName();
+                	Recommendation m = (Recommendation) element;
+                        return m.getPackageMethodName()+"."+m.getClassMethodName()+"::"+m.getMethodName();
                 }
         });
 
@@ -118,8 +103,8 @@ public class QMoveView extends ViewPart{
         col.setLabelProvider(new ColumnLabelProvider() {
                 @Override
                 public String getText(Object element) {
-                	MethodsChosen m = (MethodsChosen) element;
-                    return m.getClassOriginal();
+                	Recommendation m = (Recommendation) element;
+                    return m.getPackageTargetName()+"."+m.getClassTargetName();
                 }
         });
 
@@ -128,9 +113,51 @@ public class QMoveView extends ViewPart{
         col.setLabelProvider(new ColumnLabelProvider() {
                 @Override
                 public String getText(Object element) {
-                	MethodsChosen m = (MethodsChosen) element;
-                    return m.getTargetChosen().toString();
+                	Recommendation m = (Recommendation) element;
+                	String increase = String.format("%.2f",m.getIncrease());//String.valueOf(m.getIncrease());
+                    return increase+"%";
                 }
+        });
+        
+     // apply refactoring button
+        col = createTableViewerColumn(titles[3], bounds[3], 3);
+        col.setLabelProvider(new ColumnLabelProvider() {
+    
+        	@Override
+            public void update(ViewerCell cell) {
+
+                TableItem item = (TableItem) cell.getItem();
+                Button button = new Button((Composite) cell.getViewerRow().getControl(),SWT.PUSH | SWT.CENTER);
+                button.setText(">");
+                button.pack();
+                TableEditor editor = new TableEditor(item.getParent());
+                editor.grabHorizontal  = true;
+                editor.grabVertical = true;
+                editor.setEditor(button , item, cell.getColumnIndex());
+                editor.layout();
+                
+            }
+        	
+        });
+        
+     // more info button
+        col = createTableViewerColumn(titles[4], bounds[4], 4);
+        col.setLabelProvider(new ColumnLabelProvider() {
+    
+        	@Override
+            public void update(ViewerCell cell) {
+
+                TableItem item = (TableItem) cell.getItem();
+                Button button = new Button((Composite) cell.getViewerRow().getControl(),SWT.PUSH | SWT.CENTER);
+                button.setText("i");
+                button.pack();
+                TableEditor editor = new TableEditor(item.getParent());
+                editor.grabHorizontal  = true;
+                editor.grabVertical = true;
+                editor.setEditor(button , item, cell.getColumnIndex());
+                editor.layout();
+            }
+        	
         });
         
         viewer.refresh();

@@ -35,22 +35,42 @@ public class MoveMethod {
 		
 	private ArrayList<MethodMetric> potentialFiltred = new ArrayList<MethodMetric>();
 	private MethodMetric candidateChosen;
-	private ExecutionEvent event;
 	private Metric[] metricsOriginal;
+	private IJavaElement je;
 	
-	public MoveMethod(ExecutionEvent event, Metric[] metricsOriginal){
-		this.event = event;
-		this.metricsOriginal = metricsOriginal;
+	public MoveMethod(IJavaElement je){
+		this.je = je;
 	}
+	
+	
+	public boolean ckeckIfMethodCanBeMoved(ClassMethod method) throws OperationCanceledException, CoreException{
+		MoveInstanceMethodProcessor processor = new MoveInstanceMethodProcessor(method.getMethod(),
+				JavaPreferencesSettings.getCodeGenerationSettings(method.getMethod().getJavaProject()));
+
+		processor.checkInitialConditions(new NullProgressMonitor());
+		
+		IVariableBinding[] potential = processor.getPossibleTargets();
+        
+		if(potential.length == 0 || potential == null) return false;
+		
+		else return true; 
+		
+		
+		
+	}
+	
+	
 
 	
-	public MethodsChosen startRefactoring(ClassMethod method){
+	public MethodsChosen startRefactoring(ClassMethod method, Metric[] metricsOriginal){
+		
+		this.metricsOriginal = metricsOriginal;
 		
 		MethodsChosen methodMoved = null;
 		
 			try {
 				if(canMove(method.getMethod()))
-					methodMoved = new MethodsChosen(method, candidateChosen.getPotential());
+					methodMoved = new MethodsChosen(method, candidateChosen.getPotential(), candidateChosen.getMetrics());
 			} catch (OperationCanceledException | CoreException | InterruptedException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -99,21 +119,24 @@ public class MoveMethod {
 			workspace.run(perform, new NullProgressMonitor()); //move o m�todo para calcular m�tricas
 			
 			Thread.sleep(1000);
-			TreeSelection selection = (TreeSelection)HandlerUtil.getCurrentSelection(event);
-		    IJavaElement je = (IJavaElement) selection.getFirstElement();
-		    AbstractMetricSource ms = Dispatcher.getAbstractMetricSource(je);
+//			TreeSelection selection = (TreeSelection)HandlerUtil.getCurrentSelection(event);
+//		    IJavaElement je = (IJavaElement) selection.getFirstElement();
+			AbstractMetricSource ms = Dispatcher.getAbstractMetricSource(je);
 			Metric[] metricsModified = QMoodMetrics.getQMoodMetrics(ms); //calcula as metricas apos mover m�todo
+			Change undoChange = perform.getUndoChange();
+			undoChange.perform(new NullProgressMonitor()); //move o m�todo para a classe original
+			RefactoringStatus conditionCheckingStatus = create.getConditionCheckingStatus();
+			Thread.sleep(1000);
 			
 			if(!checkIfSomeMetricDecrease(metricsModified)){
+				System.out.println("Nenhuma métrica piora");
 				if(checkIfSomeMetricIncrease(metricsModified)){
+					System.out.println("Pelo menos uma métrica melhora");
 					potentialFiltred.add(new MethodMetric(potential[i], metricsModified));
 					continue;
 				}
 			}
 			else {
-				Change undoChange = perform.getUndoChange();
-				undoChange.perform(new NullProgressMonitor()); //move o m�todo para a classe original
-				//RefactoringStatus conditionCheckingStatus = create.getConditionCheckingStatus();
 				return false;
 			}
 			
@@ -132,8 +155,9 @@ public class MoveMethod {
 		double aux;
 		for(int i=0; i < metricsOriginal.length; i++){
 			aux = metricsModified[i].getValue() - metricsOriginal[i].getValue();
-			System.out.println(aux);
-			if(aux < 0) return true;
+			if(aux < 0) {
+				return true;
+			}
 			//if((metricsModified[i].getValue() - metricsOriginal[i].getValue()) < 0) return true;
 		}
 		
@@ -145,8 +169,9 @@ public class MoveMethod {
 		double aux;
 		for(int i=0; i < metricsOriginal.length; i++){
 			aux = metricsModified[i].getValue() - metricsOriginal[i].getValue();
-			System.out.println(aux);
-			if(aux > 0) return true;
+			if(aux > 0) {
+				return true;
+			}
 			//if((metricsModified[i].getValue() - metricsOriginal[i].getValue()) > 0) return true;
 		}
 		
@@ -181,32 +206,6 @@ public class MoveMethod {
 		
 	}
 		
-	
-	
-	
-/*	public void moveMethodToTargetChosen(IVariableBinding targetChosen, MoveInstanceMethodProcessor processor2) throws OperationCanceledException, CoreException{
-		        
-			processor2.setTarget(targetChosen);
-			processor2.setInlineDelegator(true);
-			processor2.setRemoveDelegator(true);
-			processor2.setDeprecateDelegates(false);
-	
-			Refactoring refactoring2 = new MoveRefactoring(processor2);
-			refactoring2.checkInitialConditions(new NullProgressMonitor());
-			
-			RefactoringStatus status2 = refactoring2.checkAllConditions(new NullProgressMonitor());
-			if (status2.getSeverity() != RefactoringStatus.OK) return;
-		
-			final CreateChangeOperation create2 = new CreateChangeOperation(
-						new CheckConditionsOperation(refactoring2,
-						CheckConditionsOperation.ALL_CONDITIONS),
-						RefactoringStatus.FATAL);
-			
-			PerformChangeOperation perform2 = new PerformChangeOperation(create2);
-		
-			IWorkspace workspace2 = ResourcesPlugin.getWorkspace();
-			workspace2.run(perform2, new NullProgressMonitor());
-	}*/
 }
 
 /*class RunWorkspace implements Runnable {
