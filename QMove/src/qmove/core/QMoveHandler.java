@@ -1,6 +1,8 @@
 package qmove.core;
 
 
+import java.io.FileOutputStream;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -28,8 +30,6 @@ import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.handlers.HandlerUtil;
-
-
 import net.sourceforge.metrics.core.Metric;
 import net.sourceforge.metrics.core.sources.AbstractMetricSource;
 import net.sourceforge.metrics.core.sources.Dispatcher;
@@ -37,6 +37,7 @@ import qmove.movemethod.QMoodMetrics;
 import qmove.movemethod.Recommendation;
 import qmove.movemethod.ClassMethod;
 import qmove.movemethod.MethodsChosen;
+import qmove.movemethod.MethodsTable;
 import qmove.movemethod.MoveMethod;
 
 
@@ -52,14 +53,17 @@ public class QMoveHandler extends AbstractHandler {
 	ArrayList<ClassMethod> methods = new ArrayList<ClassMethod>();
 	ArrayList<MethodsChosen> methodsMoved = new ArrayList<MethodsChosen>();
 	public static ArrayList<Recommendation> listRecommendations = new ArrayList<Recommendation>();
+	MethodsTable methodsTable;
 	Metric[] metricsOriginal;
 	ArrayList<ClassMethod> methodsCanBeMoved = new ArrayList<ClassMethod>();
 	AbstractMetricSource ms;
 	IJavaElement jee;
-	IProject p = null;
+	public static IProject p = null;
+	
 
 	@Override
 	public Object execute(ExecutionEvent event) throws ExecutionException {
+		
 		
 		try {
 			getMethods(event);
@@ -92,8 +96,11 @@ public class QMoveHandler extends AbstractHandler {
 		}
 		
 		MethodsChosen aux;
+		int qmoveID = 0;
 	    
 		while(methodsCanBeMoved.size() > 0){
+			
+			
 			
 			for(int i=0; i<methodsCanBeMoved.size(); i++){
 	    	
@@ -111,6 +118,17 @@ public class QMoveHandler extends AbstractHandler {
 	            }
 	        });
 			
+			ArrayList<MethodsChosen> clone = new ArrayList<MethodsChosen>(methodsMoved.size());
+			    for (MethodsChosen item : methodsMoved){
+					try {
+						clone.add(item.clone());
+					} catch (CloneNotSupportedException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
+			}
+			
+			methodsTable = new MethodsTable(auxMetrics, clone);
 			
 			metricsOriginal = methodsMoved.get(0).getMetrics();
 			
@@ -123,13 +141,29 @@ public class QMoveHandler extends AbstractHandler {
 			
 			methodsCanBeMoved.removeIf(methodsCanBeMoved -> methodsCanBeMoved.getMethod() == methodsMoved.get(0).getMethod());
 			
-			listRecommendations.add(new Recommendation (methodsMoved.get(0), methodsMoved.get(0).calculePercentage(auxMetrics)));
+			
+			
+			listRecommendations.add(new Recommendation (++qmoveID, methodsTable, methodsMoved.get(0), methodsMoved.get(0).calculePercentage(auxMetrics)));
 			
 			methodsMoved.removeAll(methodsMoved);
 			
 			
 		}
 	    
+		
+		/*// save the object to file
+        FileOutputStream fos = null;
+        ObjectOutputStream out = null;
+        try {
+                fos = new FileOutputStream("qmove.ser");
+                out = new ObjectOutputStream(fos);
+                out.writeObject(listRecommendations);
+
+                out.close();
+        } catch (Exception ex) {
+                ex.printStackTrace();
+        }*/
+        
 	    
 	    try {
 			PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().showView("qmove.views.QMoveView");
@@ -140,30 +174,9 @@ public class QMoveHandler extends AbstractHandler {
 	    
 	    
 	     
-	   /*FileWriter arq;
-		try {
-			arq = new FileWriter("C:\\Users\\Public\\Documents\\results.txt");
-			PrintWriter gravarArq = new PrintWriter(arq);
-	    	for(int i=0;i < methodsMoved.size(); i++){
-	    		gravarArq.printf("Method: %s.%s.%s\nTo: %s.%s\nIncrease: %s\n\n", 
-	    				listRecommendations.get(i).getPackageMethodName(),
-	    				listRecommendations.get(i).getClassMethodName(),
-	    				listRecommendations.get(i).getMethodName(),
-	    				listRecommendations.get(i).getPackageTargetName(),
-	    				listRecommendations.get(i).getClassTargetName(),
-	    				listRecommendations.get(i).getIncrease());
-		    }
-	    	
-	    	arq.close();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (OperationCanceledException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}*/
+	  
 		
-		IProgressMonitor m = new NullProgressMonitor();
+	    IProgressMonitor m = new NullProgressMonitor();
 	    IWorkspaceRoot workspaceRoot = ResourcesPlugin.getWorkspace().getRoot();
 	    IProject project = workspaceRoot.getProject("Temp");
 	    try {
@@ -172,8 +185,7 @@ public class QMoveHandler extends AbstractHandler {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-	    
-		
+	   
 		
 		
 		return null;

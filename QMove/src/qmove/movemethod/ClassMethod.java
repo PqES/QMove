@@ -1,10 +1,16 @@
 package qmove.movemethod;
 
+import java.io.Serializable;
+
 import org.eclipse.jdt.core.IMethod;
 
 
-public class ClassMethod {
+public class ClassMethod implements Serializable{
 	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 	String packageName;
 	String className;
 	IMethod method;

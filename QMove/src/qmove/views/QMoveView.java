@@ -4,6 +4,27 @@ package qmove.views;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.ui.part.*;
+
+import java.awt.FlowLayout;
+import java.io.FileInputStream;
+import java.io.ObjectInputStream;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedList;
+
+import javax.swing.JFrame;
+import javax.swing.JOptionPane;
+import javax.swing.JTable;
+
+import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IResource;
+import org.eclipse.core.resources.IResourceVisitor;
+import org.eclipse.core.resources.IWorkspaceRoot;
+import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.NullProgressMonitor;
+import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jface.viewers.*;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
@@ -12,7 +33,11 @@ import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.TableEditor;
-
+import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.events.SelectionListener;
+import java.awt.Dimension;
+import javax.swing.JScrollPane;
+import qmove.core.QMoveHandler;
 import qmove.movemethod.Recommendation;
 
 
@@ -22,8 +47,13 @@ public class QMoveView extends ViewPart{
 	 * The ID of the view as specified by the extension.
 	 */
 	public static final String ID = "qmove.views.QMoveView";
+	IProgressMonitor m = new NullProgressMonitor();
+    IWorkspaceRoot workspaceRoot = ResourcesPlugin.getWorkspace().getRoot();
+	IProject clone = workspaceRoot.getProject("Teste");
+	IMethod result = null;
 
 	private TableViewer viewer;
+	//public ArrayList<Recommendation> listRecommendations;
 	
 	
 
@@ -62,9 +92,23 @@ public class QMoveView extends ViewPart{
         table.setLinesVisible(true);
 
         viewer.setContentProvider(new ArrayContentProvider());
+        
+        /*// read the object from file
+        // save the object to file
+        FileInputStream fis = null;
+        ObjectInputStream in = null;
+        try {
+                fis = new FileInputStream("qmove.ser");
+                in = new ObjectInputStream(fis);
+                listRecommendations = (ArrayList<Recommendation>) in.readObject();
+                in.close();
+        } catch (Exception ex) {
+                ex.printStackTrace();
+        }*/
+        
         // get the content for the viewer, setInput will call getElements in the
         // contentProvider
-        viewer.setInput(qmove.core.QMoveHandler.listRecommendations);
+        viewer.setInput(QMoveHandler.listRecommendations);
         // make the selection available to other views
         getSite().setSelectionProvider(viewer);
         // set the sorter for the table
@@ -85,11 +129,24 @@ public class QMoveView extends ViewPart{
 
 	// create the columns for the table
 	private void createColumns(final Composite parent, final TableViewer viewer) {
-        String[] titles = { "Method", "To", "Increase" ,"Apply", "More Info"};
-        int[] bounds = { 100, 100, 100, 60, 80};
+        String[] titles = { "ID", "Method", "To", "Increase" ,"Apply", "More Info"};
+        int[] bounds = { 50, 100, 100, 100, 60, 80};
+    
 
-        // first column is for the method
+     // first column is for qmove id
         TableViewerColumn col = createTableViewerColumn(titles[0], bounds[0], 0);
+        col.setLabelProvider(new ColumnLabelProvider() {
+                @Override
+                public String getText(Object element) {
+                	Recommendation m = (Recommendation) element;
+                    return Integer.toString(m.getQMoveID());   
+                }
+        });
+
+        
+        
+        // second column is for the method
+        col = createTableViewerColumn(titles[1], bounds[1], 1);
         col.setLabelProvider(new ColumnLabelProvider() {
                 @Override
                 public String getText(Object element) {
@@ -98,8 +155,8 @@ public class QMoveView extends ViewPart{
                 }
         });
 
-        // second column is for the class origin
-        col = createTableViewerColumn(titles[1], bounds[1], 1);
+        // third column is for the class origin
+        col = createTableViewerColumn(titles[2], bounds[2], 2);
         col.setLabelProvider(new ColumnLabelProvider() {
                 @Override
                 public String getText(Object element) {
@@ -109,7 +166,7 @@ public class QMoveView extends ViewPart{
         });
 
         // now the class destiny
-        col = createTableViewerColumn(titles[2], bounds[2], 2);
+        col = createTableViewerColumn(titles[3], bounds[3], 3);
         col.setLabelProvider(new ColumnLabelProvider() {
                 @Override
                 public String getText(Object element) {
@@ -120,7 +177,7 @@ public class QMoveView extends ViewPart{
         });
         
      // apply refactoring button
-        col = createTableViewerColumn(titles[3], bounds[3], 3);
+        col = createTableViewerColumn(titles[4], bounds[4], 4);
         col.setLabelProvider(new ColumnLabelProvider() {
     
         	@Override
@@ -130,6 +187,36 @@ public class QMoveView extends ViewPart{
                 Button button = new Button((Composite) cell.getViewerRow().getControl(),SWT.PUSH | SWT.CENTER);
                 button.setText(">");
                 button.pack();
+                button.addSelectionListener(new SelectionListener() {
+
+                    public void widgetSelected(SelectionEvent event) {
+                    	//System.out.println(item.getText(0));
+                    	int id = Integer.parseInt(item.getText(0));
+                    	for(int i=0; i < QMoveHandler.listRecommendations.size(); i++){
+                    		if(id == QMoveHandler.listRecommendations.get(i).getQMoveID()){
+                    			String className, methodName;
+                    			className = QMoveHandler.listRecommendations.get(i).getClassMethodName();
+                    			methodName = QMoveHandler.listRecommendations.get(i).getMethodName();
+                    			try {
+									getMethod(clone, className, methodName);
+								} catch (CoreException e) {
+									// TODO Auto-generated catch block
+									e.printStackTrace();
+								}
+                    			JOptionPane.showMessageDialog(null, result.getElementName());
+                    			break;
+                    		}
+                    		
+                    	}
+                    	
+                    }
+                    
+                    public void widgetDefaultSelected(SelectionEvent event) {
+                        
+                      }
+
+                    
+                });
                 TableEditor editor = new TableEditor(item.getParent());
                 editor.grabHorizontal  = true;
                 editor.grabVertical = true;
@@ -141,7 +228,7 @@ public class QMoveView extends ViewPart{
         });
         
      // more info button
-        col = createTableViewerColumn(titles[4], bounds[4], 4);
+        col = createTableViewerColumn(titles[5], bounds[5], 5);
         col.setLabelProvider(new ColumnLabelProvider() {
     
         	@Override
@@ -151,12 +238,28 @@ public class QMoveView extends ViewPart{
                 Button button = new Button((Composite) cell.getViewerRow().getControl(),SWT.PUSH | SWT.CENTER);
                 button.setText("i");
                 button.pack();
+                button.addSelectionListener(new SelectionListener() {
+
+                    public void widgetSelected(SelectionEvent event) {
+                    	//System.out.println(item.getText(0));
+                    	new GuiPrincipal(item.getText(0), QMoveHandler.listRecommendations).setVisible(true);
+                    }
+                    
+                    public void widgetDefaultSelected(SelectionEvent event) {
+                        
+                      }
+
+                    
+                });
+                
                 TableEditor editor = new TableEditor(item.getParent());
                 editor.grabHorizontal  = true;
                 editor.grabVertical = true;
                 editor.setEditor(button , item, cell.getColumnIndex());
                 editor.layout();
-            }
+                	
+                };
+            
         	
         });
         
@@ -185,4 +288,69 @@ public class QMoveView extends ViewPart{
 	public void setFocus() {
 		viewer.getControl().setFocus();
 	}
+	
+	public void getMethod(final IProject project, final String className, final String methodName2) throws CoreException {
+		//final IMethod result = null;
+		project.accept(new IResourceVisitor() {
+
+			@Override
+			public boolean visit(IResource resource) {
+				if (resource instanceof IMethod) {
+					String methodName = resource.getName();
+					if (className.equals(((IMethod)resource).getClassFile().getElementName()) 
+							&& methodName.equals(methodName2)){
+						result = (IMethod) resource;
+					}
+				}
+				return true;
+			}
+		});		
+	}
+	
+class GuiPrincipal extends JFrame{
+	     
+    //variaveis para uso da JTable 
+    private JTable table;
+    private final String colunas[] ={"Method/Target","REU","FLE", "EFE", "EXT", "FUN", "ENT", "Media"};
+    private String dados[][];
+    /*private final String colunas[]={"Nome:","Idade:","Sexo:"};
+    private final String dados[][]={
+            {"Jack","19","Masculino"},
+            {"Eddie","56","Masculino"},
+            {"Gina","34","Feminino"},
+            {"Klaus","18","Masculino"},
+            {"Erika","20","Feminino"},
+            {"Roberto","29","Masculino"},
+            {"Maria","30","Feminino"}};*/
+     
+        /*Construtor da classe ,
+          antes de executar o metodo main(),
+          irá construir o JFrame e a JTable*/
+    public GuiPrincipal(String qmoveID, ArrayList<Recommendation> listRecommendations) {
+    	int id = Integer.parseInt(qmoveID);
+    	for(int i=0; i < listRecommendations.size(); i++){
+    		if(id == listRecommendations.get(i).getQMoveID()){
+    			dados = listRecommendations.get(i).getMethodsTable().getMethodsMetrics();
+    		}
+    	}
+        setLayout(new FlowLayout());//tipo de layout
+        setSize(new Dimension(600, 200));//tamanho do Formulario
+        setLocationRelativeTo(null);//centralizado
+        setTitle("Exemplo JTable");//titulo
+        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);//setando a ação padrão de fechamento do Formulário,
+                                                               // neste caso  irá fechar o programa
+         
+                //instanciando a JTable
+        table=new JTable(dados,colunas);
+        table.setPreferredScrollableViewportSize(new Dimension(500,100));//barra de rolagem
+        table.setFillsViewportHeight(true);
+         
+                //adicionando a tabela em uma barra de rolagem, ficará envolta , pela mesma 
+        JScrollPane scrollPane=new JScrollPane(table);
+                 
+                //adicionando ao JFrame "Formulário" a JTable "Tabela" 
+        add(scrollPane);
+    }
+     
+}
 }

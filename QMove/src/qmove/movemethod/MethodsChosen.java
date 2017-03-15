@@ -1,5 +1,8 @@
 package qmove.movemethod;
 
+import java.io.Serializable;
+
+
 import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
@@ -19,8 +22,12 @@ import org.eclipse.ltk.core.refactoring.participants.MoveRefactoring;
 import net.sourceforge.metrics.core.Metric;
 
 @SuppressWarnings("restriction")
-public class MethodsChosen {
+public class MethodsChosen implements Serializable, Cloneable{
 	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 	private ClassMethod method;
 	private IVariableBinding targetChosen;
 	private Metric[] metrics;
@@ -115,6 +122,12 @@ public class MethodsChosen {
 			IWorkspace workspace2 = ResourcesPlugin.getWorkspace();
 			workspace2.run(perform2, new NullProgressMonitor());
 		}
+	
+	@Override
+    public MethodsChosen clone() throws CloneNotSupportedException {
+        return (MethodsChosen) super.clone();
+    }
+	
 }
 
 
