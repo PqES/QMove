@@ -1,7 +1,5 @@
 package qmove.movemethod;
 
-import java.io.Serializable;
-
 
 import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.resources.ResourcesPlugin;
@@ -9,6 +7,8 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.jdt.core.IMethod;
+import org.eclipse.jdt.core.IPackageFragment;
+import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.internal.corext.refactoring.structure.MoveInstanceMethodProcessor;
 import org.eclipse.jdt.internal.ui.preferences.JavaPreferencesSettings;
@@ -22,12 +22,9 @@ import org.eclipse.ltk.core.refactoring.participants.MoveRefactoring;
 import net.sourceforge.metrics.core.Metric;
 
 @SuppressWarnings("restriction")
-public class MethodsChosen implements Serializable, Cloneable{
+public class MethodsChosen implements Cloneable{
 	
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
+
 	private ClassMethod method;
 	private IVariableBinding targetChosen;
 	private Metric[] metrics;
@@ -49,11 +46,11 @@ public class MethodsChosen implements Serializable, Cloneable{
 		return targetChosen;
 	}
 	
-	public String getpackageOriginal(){
+	public IPackageFragment getpackageOriginal(){
 		return method.getPackageName();
 	}
 	
-	public String getClassOriginal(){
+	public IType getClassOriginal(){
 		return method.getClassName();
 	}
 	

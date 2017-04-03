@@ -1,32 +1,28 @@
 package qmove.movemethod;
 
-import java.io.Serializable;
-
 import org.eclipse.jdt.core.IMethod;
+import org.eclipse.jdt.core.IPackageFragment;
+import org.eclipse.jdt.core.IType;
 
 
-public class ClassMethod implements Serializable{
+public class ClassMethod {
 	
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
-	String packageName;
-	String className;
+	IPackageFragment packageName;
+	IType className;
 	IMethod method;
 	
-	public ClassMethod(String packageName, String className, IMethod method){
+	public ClassMethod(IPackageFragment packageName, IType className, IMethod method){
 		this.packageName = packageName;
 		this.className = className;
 		this.method = method;
 		
 	}
 
-	public String getClassName() {
+	public IType getClassName() {
 		return className;
 	}
 	
-	public String getPackageName() {
+	public IPackageFragment getPackageName() {
 		return packageName;
 	}
 

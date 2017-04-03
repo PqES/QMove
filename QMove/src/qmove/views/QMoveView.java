@@ -3,19 +3,20 @@ package qmove.views;
 
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.part.*;
 
 import java.awt.FlowLayout;
-import java.io.FileInputStream;
-import java.io.ObjectInputStream;
+
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.LinkedList;
+import java.util.Iterator;
+import java.util.List;
 
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JTable;
 
+import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IResourceVisitor;
@@ -24,8 +25,16 @@ import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
+import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IMethod;
+import org.eclipse.jdt.core.JavaCore;
+import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.ui.JavaUI;
+import org.eclipse.jface.action.Action;
 import org.eclipse.jface.viewers.*;
+import org.eclipse.jface.text.Position;
+import org.eclipse.jface.text.source.Annotation;
+import org.eclipse.jface.text.source.AnnotationModel;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Table;
@@ -35,10 +44,12 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.TableEditor;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
+import org.eclipse.ui.texteditor.ITextEditor;
 import java.awt.Dimension;
 import javax.swing.JScrollPane;
 import qmove.core.QMoveHandler;
 import qmove.movemethod.Recommendation;
+import qmove.movemethod.SliceAnnotation;
 
 
 public class QMoveView extends ViewPart{
@@ -51,15 +62,10 @@ public class QMoveView extends ViewPart{
     IWorkspaceRoot workspaceRoot = ResourcesPlugin.getWorkspace().getRoot();
 	IProject clone = workspaceRoot.getProject("Teste");
 	IMethod result = null;
-
+	private Action doubleClickAction;
 	private TableViewer viewer;
-	//public ArrayList<Recommendation> listRecommendations;
-	
 	
 
-/**
-	 * The constructor.
-	 */
 	public QMoveView(){
 	}
 
@@ -74,13 +80,14 @@ public class QMoveView extends ViewPart{
         GridLayout layout = new GridLayout(2, false);
         parent.setLayout(layout);
         createViewer(parent);
-        viewer.addSelectionChangedListener(new ISelectionChangedListener() {
+        hookDoubleClickAction();
+        /*viewer.addSelectionChangedListener(new ISelectionChangedListener() {
             @Override
             public void selectionChanged(SelectionChangedEvent event) {
                     viewer.refresh();
                     
             }
-    });
+    });*/
         
 	}
 
@@ -93,18 +100,6 @@ public class QMoveView extends ViewPart{
 
         viewer.setContentProvider(new ArrayContentProvider());
         
-        /*// read the object from file
-        // save the object to file
-        FileInputStream fis = null;
-        ObjectInputStream in = null;
-        try {
-                fis = new FileInputStream("qmove.ser");
-                in = new ObjectInputStream(fis);
-                listRecommendations = (ArrayList<Recommendation>) in.readObject();
-                in.close();
-        } catch (Exception ex) {
-                ex.printStackTrace();
-        }*/
         
         // get the content for the viewer, setInput will call getElements in the
         // contentProvider
@@ -306,6 +301,67 @@ public class QMoveView extends ViewPart{
 			}
 		});		
 	}
+	
+	private void hookDoubleClickAction() {
+		viewer.addDoubleClickListener(new IDoubleClickListener() {
+			public void doubleClick(DoubleClickEvent event) {
+				doubleClickAction.run();
+			}
+		});
+	
+		doubleClickAction = new Action() {
+			public void run() {
+				IStructuredSelection selection = (IStructuredSelection) viewer.getSelection();
+				Recommendation sug = (Recommendation) selection.getFirstElement();
+				
+
+				IFile sourceFile = sug.getSourceIFile();
+				//IFile targetFile = sug.getTargetIFile();
+				
+				try {
+//					IJavaElement targetJavaElement = JavaCore
+//							.create(targetFile);
+//					JavaUI.openInEditor(targetJavaElement);
+					IJavaElement sourceJavaElement = JavaCore
+							.create(sourceFile);
+					ITextEditor sourceEditor = (ITextEditor) JavaUI
+							.openInEditor(sourceJavaElement);
+					List<Position> positions = sug.getPositions();
+					AnnotationModel annotationModel = (AnnotationModel) sourceEditor
+							.getDocumentProvider().getAnnotationModel(
+									sourceEditor.getEditorInput());
+					Iterator<Annotation> annotationIterator = annotationModel
+							.getAnnotationIterator();
+					while (annotationIterator.hasNext()) {
+						Annotation currentAnnotation = annotationIterator
+								.next();
+						if (currentAnnotation.getType().equals(
+								SliceAnnotation.EXTRACTION)) {
+							annotationModel.removeAnnotation(currentAnnotation);
+						}
+					}
+					for (Position position : positions) {
+						SliceAnnotation annotation = new SliceAnnotation(
+								SliceAnnotation.EXTRACTION,
+								sug.getAnnotationText());
+						annotationModel.addAnnotation(annotation, position);
+					}
+					Position firstPosition = positions.get(0);
+					Position lastPosition = positions.get(positions.size() - 1);
+					int offset = firstPosition.getOffset();
+					int length = lastPosition.getOffset()
+							+ lastPosition.getLength()
+							- firstPosition.getOffset();
+					sourceEditor.setHighlightRange(offset, length, true);
+				} catch (PartInitException e) {
+					e.printStackTrace();
+				} catch (JavaModelException e) {
+					e.printStackTrace();
+				}
+
+			}
+};
+}
 	
 class GuiPrincipal extends JFrame{
 	     

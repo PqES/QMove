@@ -1,8 +1,5 @@
 package qmove.core;
 
-
-import java.io.FileOutputStream;
-import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -43,11 +40,6 @@ import qmove.movemethod.MoveMethod;
 
 import org.eclipse.jface.viewers.TreeSelection;
 
-/**
- * Our sample handler extends AbstractHandler, an IHandler base class.
- * @see org.eclipse.core.commands.IHandler
- * @see org.eclipse.core.commands.AbstractHandler
- */
 public class QMoveHandler extends AbstractHandler {
 
 	ArrayList<ClassMethod> methods = new ArrayList<ClassMethod>();
@@ -149,21 +141,7 @@ public class QMoveHandler extends AbstractHandler {
 			
 			
 		}
-	    
-		
-		/*// save the object to file
-        FileOutputStream fos = null;
-        ObjectOutputStream out = null;
-        try {
-                fos = new FileOutputStream("qmove.ser");
-                out = new ObjectOutputStream(fos);
-                out.writeObject(listRecommendations);
-
-                out.close();
-        } catch (Exception ex) {
-                ex.printStackTrace();
-        }*/
-        
+	            
 	    
 	    try {
 			PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().showView("qmove.views.QMoveView");
@@ -175,7 +153,7 @@ public class QMoveHandler extends AbstractHandler {
 	    
 	     
 	  
-		
+		/*
 	    IProgressMonitor m = new NullProgressMonitor();
 	    IWorkspaceRoot workspaceRoot = ResourcesPlugin.getWorkspace().getRoot();
 	    IProject project = workspaceRoot.getProject("Temp");
@@ -184,7 +162,7 @@ public class QMoveHandler extends AbstractHandler {
 		} catch (CoreException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}
+		}*/
 	   
 		
 		
@@ -212,7 +190,7 @@ public class QMoveHandler extends AbstractHandler {
 		               IType type = types[i];
 		               IMethod[] imethods = type.getMethods();
 		               for(int j=0; j<imethods.length; j++)
-		            	   methods.add(new ClassMethod(mypackage.getElementName(), type.getElementName(), imethods[j]));
+		            	   methods.add(new ClassMethod(mypackage, type, imethods[j]));
 		             }
 		          }
 		        }
@@ -241,26 +219,5 @@ public class QMoveHandler extends AbstractHandler {
 	    clone.open(m);
 	    return clone;
 	}
-	
-	/*public  IProject copyProject(String projectName) throws CoreException {
-	    IProgressMonitor m = new NullProgressMonitor();
-	    IWorkspaceRoot workspaceRoot = ResourcesPlugin.getWorkspace().getRoot();
-	    IProject project = workspaceRoot.getProject(projectName);
-	    IProjectDescription projectDescription = project.getDescription();
-	    String cloneName = "Temp";
-	    // create clone project in workspace
-	    IProjectDescription cloneDescription = workspaceRoot.getWorkspace().newProjectDescription(cloneName);
-	    // copy project files
-	    project.copy(cloneDescription, true, m);
-	    IProject clone = workspaceRoot.getProject(cloneName);
-	    // copy the project properties
-	    cloneDescription.setNatureIds(projectDescription.getNatureIds());
-	    cloneDescription.setReferencedProjects(projectDescription.getReferencedProjects());
-	    cloneDescription.setDynamicReferences(projectDescription.getDynamicReferences());
-	    cloneDescription.setBuildSpec(projectDescription.getBuildSpec());
-	    cloneDescription.setReferencedProjects(projectDescription.getReferencedProjects());
-	    clone.setDescription(cloneDescription, null);
-	    return clone;
-	}*/
 	
 }
