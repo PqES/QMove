@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.eclipse.core.resources.IFile;
+import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jface.text.Position;
 
@@ -16,13 +17,19 @@ public class Recommendation{
 	private MethodsChosen method;
 	private double increase;
 	private MethodsTable methodsTable;
+	private IMethod methodOriginal;
 	
-	
-	public Recommendation(int qmoveID, MethodsTable methodsTable, MethodsChosen method, double increase){
+
+	public Recommendation(int qmoveID, MethodsTable methodsTable, MethodsChosen method, double increase, IMethod methodOriginal){
 		this.qmoveID = qmoveID;
 		this.methodsTable = methodsTable;
 		this.method = method; 
 		this.increase = increase;
+		this.methodOriginal = methodOriginal;
+	}
+	
+	public IMethod getMethodOriginal() {
+		return methodOriginal;
 	}
 	
 	public int getQMoveID(){
@@ -68,19 +75,18 @@ public class Recommendation{
 	}
 	
 	public List<Position> getPositions() {
-		// TODO Auto-generated method stub
 
-		MethodDeclaration md = getSourceMethodDeclaration();
+		MethodDeclaration md = MethodObjects.getInstance().getMethodDeclaration(methodOriginal);
 		ArrayList<Position> positions = new ArrayList<Position>();
 		Position position = new Position(md.getStartPosition(), md.getLength());
 		positions.add(position);
 		return positions;
 	}
 	
-	public MethodDeclaration getSourceMethodDeclaration() {
+	/*public MethodDeclaration getSourceMethodDeclaration() {
 		// TODO Auto-generated method stub
-		return MethodObjects.getInstance().getMethodDeclaration(method.getMethod());
-	}
+		return MethodObjects.getInstance().getMethodDeclaration(methodOriginal);
+	}*/
 	
 	public String getAnnotationText() {
 		Map<String, ArrayList<String>> accessMap = new LinkedHashMap<String, ArrayList<String>>();

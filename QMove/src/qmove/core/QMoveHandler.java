@@ -9,6 +9,8 @@ import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IProjectDescription;
+import org.eclipse.core.resources.IResource;
+import org.eclipse.core.resources.IResourceVisitor;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
@@ -37,7 +39,8 @@ import qmove.movemethod.MethodsChosen;
 import qmove.movemethod.MethodsTable;
 import qmove.movemethod.MoveMethod;
 
-
+import org.eclipse.jface.dialogs.MessageDialog;
+import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.TreeSelection;
 
 public class QMoveHandler extends AbstractHandler {
@@ -51,14 +54,25 @@ public class QMoveHandler extends AbstractHandler {
 	AbstractMetricSource ms;
 	IJavaElement jee;
 	public static IProject p = null;
+	ArrayList<IMethod> iMethod = new ArrayList<IMethod>();
 	
 
 	@Override
 	public Object execute(ExecutionEvent event) throws ExecutionException {
 		
+		TreeSelection selection = (TreeSelection)HandlerUtil.getCurrentSelection(event);
+	    //IJavaElement je = (IJavaElement) selection.getFirstElement();
+		
+		if (selection == null || selection.getFirstElement() == null) {
+            // Nothing selected, do nothing
+            MessageDialog.openInformation(HandlerUtil.getActiveShell(event),
+                    "Information", "Please select a project");
+            return null;
+        }
 		
 		try {
-			getMethods(event);
+			getMethodsProject((IJavaElement) selection.getFirstElement());
+			getMethodsClone();
 		} catch (JavaModelException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -133,9 +147,14 @@ public class QMoveHandler extends AbstractHandler {
 			
 			methodsCanBeMoved.removeIf(methodsCanBeMoved -> methodsCanBeMoved.getMethod() == methodsMoved.get(0).getMethod());
 			
+			/*try {
+				getMethod(p, methodsMoved.get(0).getClassOriginal().getElementName(), methodsMoved.get(0).getMethod().getElementName());
+			} catch (CoreException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}*/
 			
-			
-			listRecommendations.add(new Recommendation (++qmoveID, methodsTable, methodsMoved.get(0), methodsMoved.get(0).calculePercentage(auxMetrics)));
+			listRecommendations.add(new Recommendation (++qmoveID, methodsTable, methodsMoved.get(0), methodsMoved.get(0).calculePercentage(auxMetrics), getMethod(methodsMoved.get(0).getMethod().getElementName())));
 			
 			methodsMoved.removeAll(methodsMoved);
 			
@@ -153,7 +172,7 @@ public class QMoveHandler extends AbstractHandler {
 	    
 	     
 	  
-		/*
+		
 	    IProgressMonitor m = new NullProgressMonitor();
 	    IWorkspaceRoot workspaceRoot = ResourcesPlugin.getWorkspace().getRoot();
 	    IProject project = workspaceRoot.getProject("Temp");
@@ -162,26 +181,44 @@ public class QMoveHandler extends AbstractHandler {
 		} catch (CoreException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}*/
+		}
 	   
 		
 		
 		return null;
 	}
 	
-	public void getMethods(ExecutionEvent event) throws CoreException, InterruptedException{
-		TreeSelection selection = (TreeSelection)HandlerUtil.getCurrentSelection(event);
-	    IJavaElement je = (IJavaElement) selection.getFirstElement();
-//	    ms = Dispatcher.getAbstractMetricSource(je);
+	public void getMethodsProject(IJavaElement je) throws JavaModelException {
+		//TreeSelection selection = (TreeSelection)HandlerUtil.getCurrentSelection(event);
+	    //IJavaElement je = (IJavaElement) selection.getFirstElement();
 		IJavaProject project = je.getJavaProject();
 	    p = (IProject)project.getResource();
+	    //je = project.getPrimaryElement();
+	    if (project.isOpen()) {
+	    	IPackageFragment[] packages = project.getPackageFragments();
+		      for (IPackageFragment mypackage : packages) {
+		        if (mypackage.getKind() == IPackageFragmentRoot.K_SOURCE) {
+		          for (ICompilationUnit unit : mypackage.getCompilationUnits()) {
+		             IType[] types = unit.getTypes();
+		             for (int i = 0; i < types.length; i++) {
+		               IType type = types[i];
+		               IMethod[] imethods = type.getMethods();
+		               for(int j=0; j<imethods.length; j++)
+		            	   iMethod.add(imethods[j]);
+		             }
+		          }
+		        }
+		      }
+		}
+		
+	}
+	
+	public void getMethodsClone() throws CoreException, InterruptedException{
 	    IJavaProject projectTemp = JavaCore.create(cloneProject());
-	    Thread.sleep(1000);
+	    Thread.sleep(10000);
 	    jee = projectTemp.getPrimaryElement();
-	    Thread.sleep(1000);
 	    if (projectTemp.isOpen()) {
 	    	IPackageFragment[] packages = projectTemp.getPackageFragments();
-		      // parse(JavaCore.create(project));
 		      for (IPackageFragment mypackage : packages) {
 		        if (mypackage.getKind() == IPackageFragmentRoot.K_SOURCE) {
 		          for (ICompilationUnit unit : mypackage.getCompilationUnits()) {
@@ -220,4 +257,15 @@ public class QMoveHandler extends AbstractHandler {
 	    return clone;
 	}
 	
+	public IMethod getMethod(String methodName){
+		
+		for(int i=0; i<iMethod.size(); i++){
+			if(methodName.compareTo(iMethod.get(i).getElementName()) == 0)
+				return iMethod.get(i);	
+		}
+		
+		return null;
+		
+	}
+	 
 }

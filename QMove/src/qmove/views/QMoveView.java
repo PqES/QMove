@@ -315,13 +315,12 @@ public class QMoveView extends ViewPart{
 				Recommendation sug = (Recommendation) selection.getFirstElement();
 				
 
-				IFile sourceFile = sug.getSourceIFile();
+				IFile sourceFile = (IFile) sug.getMethodOriginal().getCompilationUnit().getResource();
+				
+				//IFile sourceFile = sug.getSourceIFile();
 				//IFile targetFile = sug.getTargetIFile();
 				
 				try {
-//					IJavaElement targetJavaElement = JavaCore
-//							.create(targetFile);
-//					JavaUI.openInEditor(targetJavaElement);
 					IJavaElement sourceJavaElement = JavaCore
 							.create(sourceFile);
 					ITextEditor sourceEditor = (ITextEditor) JavaUI
@@ -369,15 +368,6 @@ class GuiPrincipal extends JFrame{
     private JTable table;
     private final String colunas[] ={"Method/Target","REU","FLE", "EFE", "EXT", "FUN", "ENT", "Media"};
     private String dados[][];
-    /*private final String colunas[]={"Nome:","Idade:","Sexo:"};
-    private final String dados[][]={
-            {"Jack","19","Masculino"},
-            {"Eddie","56","Masculino"},
-            {"Gina","34","Feminino"},
-            {"Klaus","18","Masculino"},
-            {"Erika","20","Feminino"},
-            {"Roberto","29","Masculino"},
-            {"Maria","30","Feminino"}};*/
      
         /*Construtor da classe ,
           antes de executar o metodo main(),
