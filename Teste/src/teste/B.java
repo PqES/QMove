@@ -10,4 +10,12 @@ public class B {
 		
 	}
 
+	public void a2(){
+		
+	}
+	
+	
+
+	
+
 }

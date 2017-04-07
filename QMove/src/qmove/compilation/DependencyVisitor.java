@@ -39,22 +39,23 @@ import org.eclipse.jdt.core.dom.MethodDeclaration;
 //import org.eclipse.jdt.core.dom.TypeDeclaration;
 //import org.eclipse.jdt.core.dom.VariableDeclarationStatement;
 
+import qmove.movemethod.MethodObjects;
+
 
 public class DependencyVisitor extends ASTVisitor {
 	//private List<Object[]> dependencies;
 
-	private ICompilationUnit unit;
 	private CompilationUnit fullClass;
 	private String className;
-	private Map<String, ArrayList<IMethod>> mpMethods; 
 	private ArrayList<IMethod> arrayMethod;
+	private Map<String, ArrayList<IMethod>> mpMethods;
+	
 	
 	public DependencyVisitor(ICompilationUnit unit) throws JavaModelException {
-		this.unit = unit;
 		
 		this.arrayMethod = new ArrayList<IMethod>();
 		this.mpMethods =  new HashMap<String, ArrayList<IMethod>>();
-	
+		
 		this.className = unit.getParent().getElementName() + "." + unit.getElementName().substring(0, unit.getElementName().length() - 5);
 		mpMethods.put(this.className, null);
 		
@@ -82,7 +83,7 @@ public class DependencyVisitor extends ASTVisitor {
 				}
 			
 			mpMethods.put(this.className, new ArrayList<IMethod>(arrayMethod));
-			arrayMethod.clear(); /*desenecessario..to fazendo graça*/
+			arrayMethod.clear(); /*desenecessario..to fazendo graï¿½a*/
 		}
 	}
 	
@@ -92,7 +93,10 @@ public class DependencyVisitor extends ASTVisitor {
 	
 	@Override
 	public boolean visit(MethodDeclaration node) {
+		
 		IMethod imeth = (IMethod) node.resolveBinding().getJavaElement();
+		
+		MethodObjects.getInstance().insertMapping(imeth, node);
 		
 		arrayMethod = mpMethods.get(className);
 		if(arrayMethod==null){
@@ -100,7 +104,7 @@ public class DependencyVisitor extends ASTVisitor {
 		}
 		arrayMethod.add(imeth);
 		mpMethods.put(className, new ArrayList<IMethod>(arrayMethod));
-		arrayMethod.clear(); /*desenecessario..to fazendo graça*/
+		arrayMethod.clear(); /*desenecessario..to fazendo graï¿½a*/
 		return true;
 	}
 }

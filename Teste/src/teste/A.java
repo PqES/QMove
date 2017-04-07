@@ -6,12 +6,7 @@ public class A {
 		
 	}
 	
-	public void a2(B b){
-		
-	}
-	
 	public void a3(){
 		
-	}
-	
+	}	
 }

@@ -11,6 +11,7 @@ import java.awt.FlowLayout;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
@@ -20,18 +21,29 @@ import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IResourceVisitor;
+import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
+import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.core.dom.IVariableBinding;
+import org.eclipse.jdt.internal.corext.refactoring.structure.MoveInstanceMethodProcessor;
+import org.eclipse.jdt.internal.ui.preferences.JavaPreferencesSettings;
 import org.eclipse.jdt.ui.JavaUI;
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.viewers.*;
+import org.eclipse.ltk.core.refactoring.CheckConditionsOperation;
+import org.eclipse.ltk.core.refactoring.CreateChangeOperation;
+import org.eclipse.ltk.core.refactoring.PerformChangeOperation;
+import org.eclipse.ltk.core.refactoring.Refactoring;
+import org.eclipse.ltk.core.refactoring.RefactoringStatus;
+import org.eclipse.ltk.core.refactoring.participants.MoveRefactoring;
 import org.eclipse.jface.text.Position;
 import org.eclipse.jface.text.source.Annotation;
 import org.eclipse.jface.text.source.AnnotationModel;
@@ -64,6 +76,7 @@ public class QMoveView extends ViewPart{
 	IMethod result = null;
 	private Action doubleClickAction;
 	private TableViewer viewer;
+	int auxID = 1;
 	
 
 	public QMoveView(){
@@ -185,25 +198,44 @@ public class QMoveView extends ViewPart{
                 button.addSelectionListener(new SelectionListener() {
 
                     public void widgetSelected(SelectionEvent event) {
-                    	//System.out.println(item.getText(0));
                     	int id = Integer.parseInt(item.getText(0));
-                    	for(int i=0; i < QMoveHandler.listRecommendations.size(); i++){
-                    		if(id == QMoveHandler.listRecommendations.get(i).getQMoveID()){
-                    			String className, methodName;
-                    			className = QMoveHandler.listRecommendations.get(i).getClassMethodName();
-                    			methodName = QMoveHandler.listRecommendations.get(i).getMethodName();
-                    			try {
-									getMethod(clone, className, methodName);
-								} catch (CoreException e) {
-									// TODO Auto-generated catch block
-									e.printStackTrace();
-								}
-                    			JOptionPane.showMessageDialog(null, result.getElementName());
-                    			break;
-                    		}
-                    		
+                    	if(id == auxID){
+	                    	for(int i=0; i < QMoveHandler.listRecommendations.size(); i++){
+	                    		if(id == QMoveHandler.listRecommendations.get(i).getQMoveID()){
+	                    			Recommendation r = QMoveHandler.listRecommendations.get(i);
+	                    			try {
+										move(r.getMethodOriginal(), r.getTarget());
+									} catch (OperationCanceledException | CoreException e) {
+										// TODO Auto-generated catch block
+										e.printStackTrace();
+									}
+	                    			JOptionPane.showMessageDialog(null, "Method "+ r.getMethodOriginal().getElementName() + " moved successfully!");
+	                    			QMoveHandler.listRecommendations.remove(i);
+	                    			auxID++;
+	                    			break;
+	                    		}
+	                    		
+	                    	}
                     	}
                     	
+                    	else{
+                    		for(int i=0; i < QMoveHandler.listRecommendations.size(); i++){
+	                    		if(id == QMoveHandler.listRecommendations.get(i).getQMoveID()){
+	                    			Recommendation r = QMoveHandler.listRecommendations.get(i);
+	                    			try {
+										move(r.getMethodOriginal(), r.getTarget());
+									} catch (OperationCanceledException | CoreException e) {
+										// TODO Auto-generated catch block
+										e.printStackTrace();
+									}
+	                    		}
+	                    		QMoveHandler.listRecommendations.remove(i);
+	                    		auxID = 1;
+	                    		break;
+                    		}
+                    		
+                    		recalculateMetrics(QMoveHandler.listRecommendations);
+                    	}
                     }
                     
                     public void widgetDefaultSelected(SelectionEvent event) {
@@ -284,23 +316,6 @@ public class QMoveView extends ViewPart{
 		viewer.getControl().setFocus();
 	}
 	
-	public void getMethod(final IProject project, final String className, final String methodName2) throws CoreException {
-		//final IMethod result = null;
-		project.accept(new IResourceVisitor() {
-
-			@Override
-			public boolean visit(IResource resource) {
-				if (resource instanceof IMethod) {
-					String methodName = resource.getName();
-					if (className.equals(((IMethod)resource).getClassFile().getElementName()) 
-							&& methodName.equals(methodName2)){
-						result = (IMethod) resource;
-					}
-				}
-				return true;
-			}
-		});		
-	}
 	
 	private void hookDoubleClickAction() {
 		viewer.addDoubleClickListener(new IDoubleClickListener() {
@@ -359,7 +374,56 @@ public class QMoveView extends ViewPart{
 				}
 
 			}
-};
+		};
+	}
+	
+	public void move(IMethod method, IVariableBinding targetChosen) throws OperationCanceledException, CoreException{
+        
+		MoveInstanceMethodProcessor processor2 = new MoveInstanceMethodProcessor(method,
+				JavaPreferencesSettings.getCodeGenerationSettings(method.getJavaProject()));
+
+		processor2.checkInitialConditions(new NullProgressMonitor());
+		
+		IVariableBinding[] potential = processor2.getPossibleTargets();
+		
+		IVariableBinding candidate = null;
+		
+		for(int j=0; j<potential.length; j++){
+			if(targetChosen.toString().compareTo(potential[j].toString()) == 0){
+				candidate = potential[j];
+				break;
+			}
+		}
+		
+		processor2.setTarget(candidate);
+		processor2.setInlineDelegator(true);
+		processor2.setRemoveDelegator(true);
+		processor2.setDeprecateDelegates(false);
+
+		Refactoring refactoring2 = new MoveRefactoring(processor2);
+		refactoring2.checkInitialConditions(new NullProgressMonitor());
+		
+		RefactoringStatus status2 = refactoring2.checkAllConditions(new NullProgressMonitor());
+		if (status2.getSeverity() != RefactoringStatus.OK) return;
+	
+		final CreateChangeOperation create2 = new CreateChangeOperation(
+					new CheckConditionsOperation(refactoring2,
+					CheckConditionsOperation.ALL_CONDITIONS),
+					RefactoringStatus.FATAL);
+		
+		PerformChangeOperation perform2 = new PerformChangeOperation(create2);
+	
+		IWorkspace workspace2 = ResourcesPlugin.getWorkspace();
+		workspace2.run(perform2, new NullProgressMonitor());
+	}
+	
+	public void recalculateMetrics(ArrayList<Recommendation> oldMethods){
+		ArrayList<Recommendation> methods = new ArrayList<Recommendation>();
+		//MoveMethod checkMove = new MoveMethod();
+		for(int i=0; i<oldMethods.size(); i++){
+			
+		}
+	}
 }
 	
 class GuiPrincipal extends JFrame{
@@ -399,4 +463,4 @@ class GuiPrincipal extends JFrame{
     }
      
 }
-}
+

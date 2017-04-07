@@ -8,6 +8,7 @@ import java.util.Set;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.jdt.core.IMethod;
+import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jface.text.Position;
 
@@ -18,14 +19,16 @@ public class Recommendation{
 	private double increase;
 	private MethodsTable methodsTable;
 	private IMethod methodOriginal;
+	//MethodDeclaration md;
 	
 
-	public Recommendation(int qmoveID, MethodsTable methodsTable, MethodsChosen method, double increase, IMethod methodOriginal){
+	public Recommendation(int qmoveID, MethodsTable methodsTable, MethodsChosen method, double increase, IMethod methodOriginal/*, MethodDeclaration md*/){
 		this.qmoveID = qmoveID;
 		this.methodsTable = methodsTable;
 		this.method = method; 
 		this.increase = increase;
 		this.methodOriginal = methodOriginal;
+		//this.md = md;
 	}
 	
 	public IMethod getMethodOriginal() {
@@ -50,6 +53,10 @@ public class Recommendation{
 
 	public String getPackageTargetName() {
 		return method.getTargetChosen().getType().getPackage().getName();
+	}
+	
+	public IVariableBinding getTarget(){
+		return method.getTargetChosen();
 	}
 
 	public String getClassTargetName() {
@@ -76,11 +83,31 @@ public class Recommendation{
 	
 	public List<Position> getPositions() {
 
-		MethodDeclaration md = MethodObjects.getInstance().getMethodDeclaration(methodOriginal);
+		//MethodDeclaration md = MethodObjects.getInstance().getMethodDeclaration(methodOriginal);
+		MethodDeclaration md = getMethodDeclaration();
 		ArrayList<Position> positions = new ArrayList<Position>();
 		Position position = new Position(md.getStartPosition(), md.getLength());
 		positions.add(position);
 		return positions;
+	}
+	
+	public MethodDeclaration getMethodDeclaration() {
+		
+		/*String methodName = methodOriginal.getElementName();
+		String className = methodOriginal.getCompilationUnit().getParent().getElementName() + "." + methodOriginal.getDeclaringType().getElementName();
+		String methodMap;
+		String classMap;
+		
+		for (Map.Entry<IMethod, MethodDeclaration> entrada : qmove.compilation.DependencyVisitor.mdMethods.entrySet()){
+			
+			methodMap = entrada.getKey().getElementName();
+			classMap = entrada.getKey().getCompilationUnit().getParent().getElementName() + "." + methodOriginal.getDeclaringType().getElementName();
+			
+			if(methodName.compareTo(methodMap) == 0 && className.compareTo(classMap) == 0)
+				return entrada.getValue();
+		}*/
+		
+		return null;
 	}
 	
 	/*public MethodDeclaration getSourceMethodDeclaration() {

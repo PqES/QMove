@@ -1,11 +1,10 @@
-package qmove.core;
+package qmove.movemethod;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Map;
 
-import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
 import org.eclipse.core.resources.IProject;
@@ -25,94 +24,55 @@ import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jface.dialogs.MessageDialog;
+import org.eclipse.jface.viewers.TreeSelection;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.handlers.HandlerUtil;
+
 import net.sourceforge.metrics.core.Metric;
 import net.sourceforge.metrics.core.sources.AbstractMetricSource;
 import net.sourceforge.metrics.core.sources.Dispatcher;
-import qmove.movemethod.QMoodMetrics;
-import qmove.movemethod.Recommendation;
 import qmove.utils.qMooveUtils;
-import qmove.compilation.AllMethods;
-import qmove.movemethod.ClassMethod;
-import qmove.movemethod.MethodsChosen;
-import qmove.movemethod.MethodsTable;
-import qmove.movemethod.MoveMethod;
 
-import org.eclipse.jface.dialogs.MessageDialog;
-import org.eclipse.jface.viewers.TreeSelection;
-
-public class QMoveHandler extends AbstractHandler {
-
-	ArrayList<ClassMethod> methods = new ArrayList<ClassMethod>();
-	ArrayList<MethodsChosen> methodsMoved = new ArrayList<MethodsChosen>();
-	public static ArrayList<Recommendation> listRecommendations = new ArrayList<Recommendation>();
+public class MoveMethods {
+	
+	ArrayList<ClassMethod> methods;
+	ArrayList<ClassMethod> methodsCanBeMoved;
+	ArrayList<MethodsChosen> methodsMoved;
+	ArrayList<Recommendation> listRecommendations;
+	ArrayList<IMethod> iMethod;
+	Map<String, ArrayList<IMethod>> allMethods;
 	MethodsTable methodsTable;
 	Metric[] metricsOriginal;
-	ArrayList<ClassMethod> methodsCanBeMoved = new ArrayList<ClassMethod>();
 	AbstractMetricSource ms;
 	IJavaElement jee;
-	public static IProject p = null;
-	public static IJavaProject jproject;
-	ArrayList<IMethod> iMethod = new ArrayList<IMethod>();
-	Map<String, ArrayList<IMethod>> allMethods;
+	IJavaProject project;
 	
-
-	@Override
-	public Object execute(ExecutionEvent event) throws ExecutionException {
-		
-		TreeSelection selection = (TreeSelection)HandlerUtil.getCurrentSelection(event);
-	 
-		if (selection == null || selection.getFirstElement() == null) {
-            // Nothing selected, do nothing
-            MessageDialog.openInformation(HandlerUtil.getActiveShell(event),
-                    "Information", "Please select a project");
-            return null;
-        }
-		
-		IJavaElement je = (IJavaElement) selection.getFirstElement();
-		jproject = je.getJavaProject();
-		//p = (IProject) jproject.getResource();
-		p = jproject.getProject();
-		
-		try {
+	
+	public MoveMethods(IJavaProject project, ArrayList<Recommendation> listRecommendations){
+		this.project = project;
+		methods = new ArrayList<ClassMethod>();
+		methodsMoved = new ArrayList<MethodsChosen>();
+		this.listRecommendations = listRecommendations;
+		methodsCanBeMoved = new ArrayList<ClassMethod>();
+		iMethod = new ArrayList<IMethod>();
+	}
+	
+	public ArrayList<Recommendation> moveMethods() throws ExecutionException {
 			
-			allMethods = qMooveUtils.getClassesMethods(p);
-			//getMethodsProject((IJavaElement) selection.getFirstElement());
-			getMethodsClone();
+		allMethods = qMooveUtils.getClassesMethods(project.getProject());
+		getMethodsClone();
 			
-		} catch (JavaModelException e) {	
-			e.printStackTrace();
-		} catch (CoreException e) {
-			e.printStackTrace();
-		} catch (InterruptedException e) {	
-			e.printStackTrace();
-		}
-		
-		
-		
-		ms = Dispatcher.getAbstractMetricSource(jee);
+		ms = Dispatcher.getAbstractMetricSource(project.getPrimaryElement());
 	    metricsOriginal = QMoodMetrics.getQMoodMetrics(ms);
-		MoveMethod checkMove = new MoveMethod(jee);
-
 		
-		for(int i=0; i<methods.size(); i++){
-			try {
-				if(checkMove.ckeckIfMethodCanBeMoved(methods.get(i)))
-						methodsCanBeMoved.add(methods.get(i));
-			} catch (OperationCanceledException | CoreException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}	
-		}
-		
+	    
+	    		
 		MethodsChosen aux;
 		int qmoveID = 0;
 	    
-		while(methodsCanBeMoved.size() > 0){
-			
-			
+		while(listRecommendations.size() > 0){
 			
 			for(int i=0; i<methodsCanBeMoved.size(); i++){
 	    	
@@ -275,5 +235,4 @@ public class QMoveHandler extends AbstractHandler {
 		return null;
 		
 	}
-	 
 }

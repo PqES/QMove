@@ -12,6 +12,8 @@ import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IResourceVisitor;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jdt.core.ICompilationUnit;
+import org.eclipse.jdt.core.IJavaElement;
+import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IPackageDeclaration;
 import org.eclipse.jdt.core.JavaCore;
@@ -23,6 +25,8 @@ public class qMooveUtils {
 
 	public static Map<String, ArrayList<IMethod>> getClassesMethods(final IProject project) throws CoreException {
 		Map<String, ArrayList<IMethod>> map = new HashMap<String, ArrayList<IMethod>>();
+//		IJavaProject p = je.getJavaProject();
+//		IProject project = (IProject) p.getResource();
 		project.accept(new IResourceVisitor() {
 
 			@Override
@@ -40,7 +44,7 @@ public class qMooveUtils {
 		return map;
 	}
 	
-	public static Collection<String> getClassNames(final IProject project) throws CoreException {
+	/*public static Collection<String> getClassNames(final IProject project) throws CoreException {
 		final Collection<String> result = new LinkedList<String>();
 		project.accept(new IResourceVisitor() {
 
@@ -88,8 +92,8 @@ public class qMooveUtils {
 			@Override
 			public boolean visit(IResource resource) {
 				if (resource instanceof IMethod) {
-	/*talvez desnecessario*/ final String methodName = resource.getName();
-	/*talvez desnecessario*/if (className.equals(((IMethod)resource).getClassFile().getElementName()) && methodName != null){
+	talvez desnecessario final String methodName = resource.getName();
+	talvez desnecessarioif (className.equals(((IMethod)resource).getClassFile().getElementName()) && methodName != null){
 						result.add((IMethod)resource);
 					}
 				}
@@ -101,5 +105,5 @@ public class qMooveUtils {
 		//Collections.reverse((List<String>) result);
 
 		return result;
-	}
+	}*/
 }
