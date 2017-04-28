@@ -25,6 +25,8 @@ import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.ui.IViewPart;
+import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.handlers.HandlerUtil;
@@ -61,6 +63,14 @@ public class QMoveHandler extends AbstractHandler {
 
 	@Override
 	public Object execute(ExecutionEvent event) throws ExecutionException {
+
+		IWorkbenchPage wp=PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
+
+		//Find desired view :
+		IViewPart myView=wp.findView("qmove.views.QMoveView");
+
+		//Hide the view :
+		wp.hideView(myView);
 		
 		TreeSelection selection = (TreeSelection)HandlerUtil.getCurrentSelection(event);
 	 

@@ -41,16 +41,16 @@ public class MethodsTable implements Serializable{
 				aux = methods.get(i-1).getMetrics()[j-1].getValue()
 					  - currentMetrics[j-1].getValue();
 				
-				if(aux < 0) s[i][j] = String.format("%.2f",aux);
-				else if(aux > 0) s[i][j] = String.format("+%.2f",aux);
+				if(aux < 0) s[i][j] = String.format("%.5f",aux);
+				else if(aux > 0) s[i][j] = String.format("+%.5f",aux);
 				else if (aux == 0) s[i][j] = "";
 				
 				media +=  methods.get(i-1).getMetrics()[j-1].getValue();
 			}
 			
 			media = (media/6) - calculeMediaCurrent();
-			if(media < 0) s[i][7] = String.format("%.2f",aux);
-			else if(media > 0) s[i][7] = String.format("+%.2f",aux);
+			if(media < 0) s[i][7] = String.format("%.5f",aux);
+			else if(media > 0) s[i][7] = String.format("+%.5f",aux);
 			else if (media == 0) s[i][7] = "0";
 			 
 		}
@@ -61,14 +61,14 @@ public class MethodsTable implements Serializable{
 	private String[] getCurrentMetrics(){
 		String s[] = new String[8];
 		s[0] = "Current";
-		s[1] = String.format("%.2f", currentMetrics[0].getValue());
-		s[2] = String.format("%.2f", currentMetrics[1].getValue());
-		s[3] = String.format("%.2f", currentMetrics[2].getValue());
-		s[4] = String.format("%.2f", currentMetrics[3].getValue());
-		s[5] = String.format("%.2f", currentMetrics[4].getValue());
-		s[6] = String.format("%.2f", currentMetrics[5].getValue());
+		s[1] = String.format("%.5f", currentMetrics[0].getValue());
+		s[2] = String.format("%.5f", currentMetrics[1].getValue());
+		s[3] = String.format("%.5f", currentMetrics[2].getValue());
+		s[4] = String.format("%.5f", currentMetrics[3].getValue());
+		s[5] = String.format("%.5f", currentMetrics[4].getValue());
+		s[6] = String.format("%.5f", currentMetrics[5].getValue());
 		double media =  calculeMediaCurrent();
-		s[7] = String.format("%.2f", media);
+		s[7] = String.format("%.5f", media);
 		
 		return s;
 	}

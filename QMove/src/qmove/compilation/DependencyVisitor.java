@@ -59,7 +59,7 @@ public class DependencyVisitor extends ASTVisitor {
 		this.className = unit.getParent().getElementName() + "." + unit.getElementName().substring(0, unit.getElementName().length() - 5);
 		mpMethods.put(this.className, null);
 		
-		if(!unit.isOpen()){
+		//if(!unit.isOpen()){
 				
 			ASTParser parser = ASTParser.newParser(AST.JLS4); // It was JSL3, but it
 			// is now deprecated
@@ -72,7 +72,7 @@ public class DependencyVisitor extends ASTVisitor {
 			
 			this.fullClass = (CompilationUnit) parser.createAST(null);// parse
 			this.fullClass.accept(this);
-		}else{
+		/*}else{
 		
 			IType[] allTypes = unit.getAllTypes();
 				for(IType type : allTypes){
@@ -83,8 +83,8 @@ public class DependencyVisitor extends ASTVisitor {
 				}
 			
 			mpMethods.put(this.className, new ArrayList<IMethod>(arrayMethod));
-			arrayMethod.clear(); /*desenecessario..to fazendo gra�a*/
-		}
+			arrayMethod.clear(); /*desenecessario..to fazendo gra�a
+		}*/
 	}
 	
 	public Map<String,ArrayList<IMethod>> getMapMethods(){

@@ -3,12 +3,18 @@ package qmove.views;
 
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.ui.IActionBars;
+import org.eclipse.ui.ISharedImages;
+import org.eclipse.ui.IViewPart;
+import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.PartInitException;
+import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.part.*;
 
 import java.awt.FlowLayout;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -17,6 +23,7 @@ import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JTable;
 
+import org.eclipse.core.commands.ExecutionException;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
@@ -32,11 +39,15 @@ import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.IVariableBinding;
+import org.eclipse.jdt.core.dom.MethodDeclaration;
+import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.internal.corext.refactoring.structure.MoveInstanceMethodProcessor;
 import org.eclipse.jdt.internal.ui.preferences.JavaPreferencesSettings;
 import org.eclipse.jdt.ui.JavaUI;
 import org.eclipse.jface.action.Action;
+import org.eclipse.jface.action.IToolBarManager;
 import org.eclipse.jface.viewers.*;
 import org.eclipse.ltk.core.refactoring.CheckConditionsOperation;
 import org.eclipse.ltk.core.refactoring.CreateChangeOperation;
@@ -57,9 +68,13 @@ import org.eclipse.swt.custom.TableEditor;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.ui.texteditor.ITextEditor;
+
+
+
 import java.awt.Dimension;
 import javax.swing.JScrollPane;
 import qmove.core.QMoveHandler;
+import qmove.movemethod.MoveMethods;
 import qmove.movemethod.Recommendation;
 import qmove.movemethod.SliceAnnotation;
 
@@ -76,7 +91,7 @@ public class QMoveView extends ViewPart{
 	IMethod result = null;
 	private Action doubleClickAction;
 	private TableViewer viewer;
-	int auxID = 1;
+	private Action applyRefactoringAction;
 	
 
 	public QMoveView(){
@@ -89,18 +104,14 @@ public class QMoveView extends ViewPart{
 	
 	
 	
-	public void createPartControl(Composite parent) {
+	public void createPartControl(Composite parent){
         GridLayout layout = new GridLayout(2, false);
         parent.setLayout(layout);
+        makeActions();
         createViewer(parent);
+        //makeActions();
         hookDoubleClickAction();
-        /*viewer.addSelectionChangedListener(new ISelectionChangedListener() {
-            @Override
-            public void selectionChanged(SelectionChangedEvent event) {
-                    viewer.refresh();
-                    
-            }
-    });*/
+        contributeToActionBars();
         
 	}
 
@@ -129,6 +140,7 @@ public class QMoveView extends ViewPart{
         gridData.grabExcessVerticalSpace = true;
         gridData.horizontalAlignment = GridData.FILL;
         viewer.getControl().setLayoutData(gridData);
+        applyRefactoringAction.setEnabled(true);
 	}
 
 	public TableViewer getViewer() {
@@ -198,8 +210,8 @@ public class QMoveView extends ViewPart{
                 button.addSelectionListener(new SelectionListener() {
 
                     public void widgetSelected(SelectionEvent event) {
-                    	int id = Integer.parseInt(item.getText(0));
-                    	if(id == auxID){
+                    	int id = Integer.parseInt(item.getText(0)); 
+                    	if(id == 1){
 	                    	for(int i=0; i < QMoveHandler.listRecommendations.size(); i++){
 	                    		if(id == QMoveHandler.listRecommendations.get(i).getQMoveID()){
 	                    			Recommendation r = QMoveHandler.listRecommendations.get(i);
@@ -209,9 +221,38 @@ public class QMoveView extends ViewPart{
 										// TODO Auto-generated catch block
 										e.printStackTrace();
 									}
+	                    			
 	                    			JOptionPane.showMessageDialog(null, "Method "+ r.getMethodOriginal().getElementName() + " moved successfully!");
 	                    			QMoveHandler.listRecommendations.remove(i);
-	                    			auxID++;
+	                    			
+	                    			for(int j=0; j < QMoveHandler.listRecommendations.size(); j++){
+	                    				QMoveHandler.listRecommendations.get(j).decreaseQMoveID();
+	                    			}
+	        	                    	
+	                    			
+	                    			IWorkbenchPage wp=PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
+
+	                    			//Find desired view :
+	                    			IViewPart myView=wp.findView("qmove.views.QMoveView");
+
+	                    			//Hide the view :
+	                    			wp.hideView(myView);
+	                    			try {
+										wp.showView("qmove.views.QMoveView");
+									} catch (PartInitException e) {
+										// TODO Auto-generated catch block
+										e.printStackTrace();
+									}
+	                    			
+	                    			/*
+	                    			viewer.setInput(QMoveHandler.listRecommendations);
+	                    			viewer.refresh();
+	                    			parent.redraw();
+	                    			parent.update();
+	                    			parent.pack();
+	                    			parent.layout();
+	                    	        parent.layout(true);
+	                    		*/	
 	                    			break;
 	                    		}
 	                    		
@@ -228,13 +269,37 @@ public class QMoveView extends ViewPart{
 										// TODO Auto-generated catch block
 										e.printStackTrace();
 									}
+	                    			
+	                    			QMoveHandler.listRecommendations.remove(i);
 	                    		}
-	                    		QMoveHandler.listRecommendations.remove(i);
-	                    		auxID = 1;
-	                    		break;
-                    		}
+	                    	}
                     		
-                    		recalculateMetrics(QMoveHandler.listRecommendations);
+                    		MoveMethods reMoveMethods = new MoveMethods(QMoveHandler.jproject, QMoveHandler.listRecommendations);
+                    		try {
+								
+                    			/*ArrayList<Recommendation> newListRecommendations = */
+                    			QMoveHandler.listRecommendations = reMoveMethods.moveMethods();
+                    			//QMoveHandler.listRecommendations = newListRecommendations;
+								//viewer.setInput(newListRecommendations);
+								IWorkbenchPage wp=PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
+
+                    			//Find desired view :
+                    			IViewPart myView=wp.findView("qmove.views.QMoveView");
+
+                    			//Hide the view :
+                    			wp.hideView(myView);
+                    			
+                    			try {
+									wp.showView("qmove.views.QMoveView");
+								} catch (PartInitException e) {
+									// TODO Auto-generated catch block
+									e.printStackTrace();
+								}
+                    			
+							} catch (ExecutionException e1) {
+								// TODO Auto-generated catch block
+								e1.printStackTrace();
+							}
                     	}
                     }
                     
@@ -377,6 +442,16 @@ public class QMoveView extends ViewPart{
 		};
 	}
 	
+	private void contributeToActionBars() {
+		IActionBars bars = getViewSite().getActionBars();
+		fillLocalToolBar(bars.getToolBarManager());
+	}
+
+	private void fillLocalToolBar(IToolBarManager manager) {
+		manager.add(applyRefactoringAction);
+	
+	}
+	
 	public void move(IMethod method, IVariableBinding targetChosen) throws OperationCanceledException, CoreException{
         
 		MoveInstanceMethodProcessor processor2 = new MoveInstanceMethodProcessor(method,
@@ -417,20 +492,103 @@ public class QMoveView extends ViewPart{
 		workspace2.run(perform2, new NullProgressMonitor());
 	}
 	
-	public void recalculateMetrics(ArrayList<Recommendation> oldMethods){
-		ArrayList<Recommendation> methods = new ArrayList<Recommendation>();
-		//MoveMethod checkMove = new MoveMethod();
-		for(int i=0; i<oldMethods.size(); i++){
-			
-		}
+	private void makeActions(){
+		applyRefactoringAction = new Action() {
+			public void run() {
+				IMethod method;
+				IVariableBinding target;
+				for(int i=0; i< QMoveHandler.listRecommendations.size(); i++){
+					method = QMoveHandler.listRecommendations.get(i).getMethodOriginal();
+					target = QMoveHandler.listRecommendations.get(i).getTarget();
+					try {
+						moveAll(method,	target);
+						//TODO Ver porque o m�todo de id 2 nao ta sendo movido (debugar) 
+					} catch (OperationCanceledException | CoreException e) {
+						
+						e.printStackTrace();
+					}
+				}
+				
+				QMoveHandler.listRecommendations.clear();
+				
+				JOptionPane.showMessageDialog(null, "All Methods Moved Successfully!");
+				
+				IWorkbenchPage wp=PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
+
+    			//Find desired view :
+    			IViewPart myView=wp.findView("qmove.views.QMoveView");
+
+    			//Hide the view :
+    			wp.hideView(myView);
+    			
+				try {
+					wp.showView("qmove.views.QMoveView");
+				} catch (PartInitException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				
+    			
+			}
+				
+		};
+		
+		applyRefactoringAction.setToolTipText("Apply All Refactorings");
+		applyRefactoringAction.setImageDescriptor(PlatformUI.getWorkbench()
+				.getSharedImages()
+				.getImageDescriptor(ISharedImages.IMG_TOOL_FORWARD));
+		applyRefactoringAction.setEnabled(false);
 	}
+	
+	public void moveAll(IMethod method, IVariableBinding targetChosen) throws OperationCanceledException, CoreException{
+        
+		MoveInstanceMethodProcessor processor2 = new MoveInstanceMethodProcessor(method,
+				JavaPreferencesSettings.getCodeGenerationSettings(method.getJavaProject()));
+
+		processor2.checkInitialConditions(new NullProgressMonitor());
+		
+		IVariableBinding[] potential = processor2.getPossibleTargets();
+		
+		IVariableBinding candidate = null;
+		
+		for(int j=0; j<potential.length; j++){
+			if(targetChosen.toString().compareTo(potential[j].toString()) == 0){
+				candidate = potential[j];
+				break;
+			}
+		}
+		
+		processor2.setTarget(candidate);
+		processor2.setInlineDelegator(true);
+		processor2.setRemoveDelegator(true);
+		processor2.setDeprecateDelegates(false);
+
+		Refactoring refactoring2 = new MoveRefactoring(processor2);
+		refactoring2.checkInitialConditions(new NullProgressMonitor());
+		
+		RefactoringStatus status2 = refactoring2.checkAllConditions(new NullProgressMonitor());
+		if (status2.getSeverity() != RefactoringStatus.OK) return;
+	
+		final CreateChangeOperation create2 = new CreateChangeOperation(
+					new CheckConditionsOperation(refactoring2,
+					CheckConditionsOperation.ALL_CONDITIONS),
+					RefactoringStatus.FATAL);
+		
+		PerformChangeOperation perform2 = new PerformChangeOperation(create2);
+	
+		IWorkspace workspace2 = ResourcesPlugin.getWorkspace();
+		workspace2.run(perform2, new NullProgressMonitor());
+	}
+	
+	
 }
+	
 	
 class GuiPrincipal extends JFrame{
 	     
     //variaveis para uso da JTable 
     private JTable table;
-    private final String colunas[] ={"Method/Target","REU","FLE", "EFE", "EXT", "FUN", "ENT", "Media"};
+    private final String colunas[] ={"Method/Target","REU","FLE", "EFE", "EXT", "FUN", "ENT", "Average"};
     private String dados[][];
      
         /*Construtor da classe ,
@@ -446,8 +604,8 @@ class GuiPrincipal extends JFrame{
         setLayout(new FlowLayout());//tipo de layout
         setSize(new Dimension(600, 200));//tamanho do Formulario
         setLocationRelativeTo(null);//centralizado
-        setTitle("Exemplo JTable");//titulo
-        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);//setando a ação padrão de fechamento do Formulário,
+        setTitle("More Info");//titulo
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);//setando a ação padrão de fechamento do Formulário,
                                                                // neste caso  irá fechar o programa
          
                 //instanciando a JTable
