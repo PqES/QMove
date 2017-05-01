@@ -130,6 +130,11 @@ public class QMoveHandler extends AbstractHandler {
 				if(aux != null) methodsMoved.add(aux);		
 			}
 			
+			if(methodsMoved.size() == 0){
+				methodsCanBeMoved.clear();
+				continue;
+			}
+			
 			Metric[] auxMetrics = metricsOriginal;
 			
 			Collections.sort (methodsMoved, new Comparator() {
@@ -151,6 +156,7 @@ public class QMoveHandler extends AbstractHandler {
 			}
 			
 			methodsTable = new MethodsTable(auxMetrics, clone);
+		
 			
 			metricsOriginal = methodsMoved.get(0).getMetrics();
 			

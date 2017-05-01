@@ -85,10 +85,10 @@ public class QMoveView extends ViewPart{
 	 * The ID of the view as specified by the extension.
 	 */
 	public static final String ID = "qmove.views.QMoveView";
-	IProgressMonitor m = new NullProgressMonitor();
-    IWorkspaceRoot workspaceRoot = ResourcesPlugin.getWorkspace().getRoot();
-	IProject clone = workspaceRoot.getProject("Teste");
-	IMethod result = null;
+	//IProgressMonitor m = new NullProgressMonitor();
+    //IWorkspaceRoot workspaceRoot = ResourcesPlugin.getWorkspace().getRoot();
+	//IProject clone = workspaceRoot.getProject("Teste");
+	//IMethod result = null;
 	private Action doubleClickAction;
 	private TableViewer viewer;
 	private Action applyRefactoringAction;
@@ -502,7 +502,7 @@ public class QMoveView extends ViewPart{
 					target = QMoveHandler.listRecommendations.get(i).getTarget();
 					try {
 						moveAll(method,	target);
-						//TODO Ver porque o método de id 2 nao ta sendo movido (debugar) 
+						//TODO Ver porque o mï¿½todo de id 2 nao ta sendo movido (debugar) 
 					} catch (OperationCanceledException | CoreException e) {
 						
 						e.printStackTrace();

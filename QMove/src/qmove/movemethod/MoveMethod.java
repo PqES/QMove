@@ -91,24 +91,36 @@ public class MoveMethod {
         
 		if(potential.length == 0 || potential == null) return false;
 		
+		System.out.println("-----------Metodo: "+method.getElementName()+"----------------" );
+		
 		IVariableBinding candidate;
 		
 		for (int i = 0; i < potential.length; i++) {
+			
+			
+			MoveInstanceMethodProcessor processor2 = new MoveInstanceMethodProcessor(method,
+					JavaPreferencesSettings.getCodeGenerationSettings(method.getJavaProject()));
+
+			processor2.checkInitialConditions(new NullProgressMonitor());
+			
 		
 			candidate = potential[i];
 			
-			processor.setTarget(candidate);
-			processor.setInlineDelegator(true);
-			processor.setRemoveDelegator(true);
-			processor.setDeprecateDelegates(false);
+			System.out.println("Calculando refctoring para "+candidate.getJavaElement().getPrimaryElement().getElementName());
+			
+			processor2.setTarget(candidate);
+			processor2.setInlineDelegator(true);
+			processor2.setRemoveDelegator(true);
+			processor2.setDeprecateDelegates(false);
 
-			Refactoring refactoring = new MoveRefactoring(processor);
+			Refactoring refactoring = new MoveRefactoring(processor2);
 			refactoring.checkInitialConditions(new NullProgressMonitor());
 
 		
-			RefactoringStatus status = refactoring.checkAllConditions(new NullProgressMonitor());
-			if (status.getSeverity() != RefactoringStatus.OK) return false;
-
+			//RefactoringStatus status = refactoring.checkAllConditions(new NullProgressMonitor());
+			//if (status.getSeverity() != RefactoringStatus.OK) return false;
+			//TODO Verificar o porque do status não estar OK 
+			
 			final CreateChangeOperation create = new CreateChangeOperation(new CheckConditionsOperation(refactoring,
 						CheckConditionsOperation.ALL_CONDITIONS),
 						RefactoringStatus.FATAL);
@@ -135,15 +147,20 @@ public class MoveMethod {
 					potentialFiltred.add(new MethodMetric(potential[i], metricsModified));
 					continue;
 				}
+				else System.out.println("Nenhuma métrica melhora");
 			}
 			else {
+				System.out.println("Alguma métrica piora");
 				return false;
 			}
 			
 			
 		}
 		
-		if(choosePotential()) return true;
+		if(choosePotential()){
+			potentialFiltred.clear();
+			return true;
+		}
 		
 		else return false;
 			
