@@ -7,8 +7,12 @@ import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.OperationCanceledException;
+import org.eclipse.core.runtime.Status;
+import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.dom.IVariableBinding;
@@ -32,6 +36,22 @@ import net.sourceforge.metrics.core.sources.Dispatcher;
 
 @SuppressWarnings("restriction")
 public class MoveMethod {
+	
+	/*
+	Job job = new Job("My Job") {
+    
+    @Override
+    protected IStatus run(IProgressMonitor monitor) {
+    	
+    	return Status.OK_STATUS;
+    }
+	};
+
+	// Start the Job
+	job.schedule();
+
+	job.join();
+	*/
 		
 	private ArrayList<MethodMetric> potentialFiltred = new ArrayList<MethodMetric>();
 	private MethodMetric candidateChosen;
@@ -130,6 +150,9 @@ public class MoveMethod {
 			IWorkspace workspace = ResourcesPlugin.getWorkspace();
 			workspace.run(perform, new NullProgressMonitor()); //move o m�todo para calcular m�tricas
 			
+			
+		
+			
 			Thread.sleep(1000);
 //			TreeSelection selection = (TreeSelection)HandlerUtil.getCurrentSelection(event);
 //		    IJavaElement je = (IJavaElement) selection.getFirstElement();
@@ -137,7 +160,7 @@ public class MoveMethod {
 			Metric[] metricsModified = QMoodMetrics.getQMoodMetrics(ms); //calcula as metricas apos mover m�todo
 			Change undoChange = perform.getUndoChange();
 			undoChange.perform(new NullProgressMonitor()); //move o m�todo para a classe original
-			RefactoringStatus conditionCheckingStatus = create.getConditionCheckingStatus();
+			//RefactoringStatus conditionCheckingStatus = create.getConditionCheckingStatus();
 			Thread.sleep(1000);
 			
 			if(!checkIfSomeMetricDecrease(metricsModified)){

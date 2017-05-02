@@ -5,6 +5,8 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Map;
 
+import javax.inject.Inject;
+
 import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
@@ -14,8 +16,13 @@ import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.OperationCanceledException;
+import org.eclipse.core.runtime.Status;
+import org.eclipse.core.runtime.SubMonitor;
+import org.eclipse.core.runtime.jobs.Job;
+import org.eclipse.e4.ui.di.UISynchronize;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
@@ -59,6 +66,7 @@ public class QMoveHandler extends AbstractHandler {
 	public static IJavaProject jproject;
 	ArrayList<IMethod> iMethod = new ArrayList<IMethod>();
 	Map<String, ArrayList<IMethod>> allMethods;
+	private IJavaProject projectTemp;
 	
 
 	@Override
@@ -86,6 +94,8 @@ public class QMoveHandler extends AbstractHandler {
 		//p = (IProject) jproject.getResource();
 		p = jproject.getProject();
 		
+	
+			
 		try {
 			
 			allMethods = qMooveUtils.getClassesMethods(p);
@@ -222,10 +232,11 @@ public class QMoveHandler extends AbstractHandler {
 	
 	
 	public void getMethodsClone() throws CoreException, InterruptedException{
-	    IJavaProject projectTemp = JavaCore.create(cloneProject());
-	    Thread.sleep(10000);
+		
+		IJavaProject projectTemp = JavaCore.create(cloneProject());
+	    //Thread.sleep(10000);
 	    jee = projectTemp.getPrimaryElement();
-	    if (projectTemp.isOpen()) {
+	   // if (projectTemp.isOpen()) {
 	    	IPackageFragment[] packages = projectTemp.getPackageFragments();
 		      for (IPackageFragment mypackage : packages) {
 		        if (mypackage.getKind() == IPackageFragmentRoot.K_SOURCE) {
@@ -240,7 +251,7 @@ public class QMoveHandler extends AbstractHandler {
 		          }
 		        }
 		      }
-		}
+		//}
 		
 	}
 	
