@@ -32,7 +32,7 @@ public class Recommendation{
 	private int qmoveID;
 	private IMethod method;
 	private IVariableBinding targetChosen;
-	private Metric[] metrics;
+	private double[] metrics;
 	private double increase;
 	private MethodsTable methodsTable;
 	private IMethod methodOriginal;
@@ -155,7 +155,7 @@ public class Recommendation{
 		return sb.toString();
 	}
 	
-	public void setMetrics(Metric[] metrics){
+	public void setMetrics(double[] metrics){
 		this.metrics = metrics;
 	}
 	

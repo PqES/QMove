@@ -10,10 +10,10 @@ public class MethodsTable implements Serializable{
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-	private Metric[] currentMetrics;
+	private double[] currentMetrics;
 	private ArrayList<MethodsChosen> methods;
 	
-	public MethodsTable(Metric[] metricsCurrent, ArrayList<MethodsChosen> methods){	
+	public MethodsTable(double[] metricsCurrent, ArrayList<MethodsChosen> methods){	
 		
 		this.currentMetrics = metricsCurrent;
 		this.methods = methods;
@@ -38,14 +38,14 @@ public class MethodsTable implements Serializable{
 		
 			for(int j=1;j<=6;j++){
 				
-				aux = methods.get(i-1).getMetrics()[j-1].getValue()
-					  - currentMetrics[j-1].getValue();
+				aux = methods.get(i-1).getMetrics()[j-1]
+					  - currentMetrics[j-1];
 				
 				if(aux < 0) s[i][j] = String.format("%.5f",aux);
 				else if(aux > 0) s[i][j] = String.format("+%.5f",aux);
 				else if (aux == 0) s[i][j] = "";
 				
-				media +=  methods.get(i-1).getMetrics()[j-1].getValue();
+				media +=  methods.get(i-1).getMetrics()[j-1];
 			}
 			
 			media = (media/6) - calculeMediaCurrent();
@@ -61,12 +61,12 @@ public class MethodsTable implements Serializable{
 	private String[] getCurrentMetrics(){
 		String s[] = new String[8];
 		s[0] = "Current";
-		s[1] = String.format("%.5f", currentMetrics[0].getValue());
-		s[2] = String.format("%.5f", currentMetrics[1].getValue());
-		s[3] = String.format("%.5f", currentMetrics[2].getValue());
-		s[4] = String.format("%.5f", currentMetrics[3].getValue());
-		s[5] = String.format("%.5f", currentMetrics[4].getValue());
-		s[6] = String.format("%.5f", currentMetrics[5].getValue());
+		s[1] = String.format("%.5f", currentMetrics[0]);
+		s[2] = String.format("%.5f", currentMetrics[1]);
+		s[3] = String.format("%.5f", currentMetrics[2]);
+		s[4] = String.format("%.5f", currentMetrics[3]);
+		s[5] = String.format("%.5f", currentMetrics[4]);
+		s[6] = String.format("%.5f", currentMetrics[5]);
 		double media =  calculeMediaCurrent();
 		s[7] = String.format("%.5f", media);
 		
@@ -74,12 +74,12 @@ public class MethodsTable implements Serializable{
 	}
 	
 	private double calculeMediaCurrent(){
-		double media = (currentMetrics[0].getValue() +
-				currentMetrics[1].getValue() +
-				currentMetrics[2].getValue() +
-				currentMetrics[3].getValue() +
-				currentMetrics[4].getValue() +
-				currentMetrics[5].getValue())/6;
+		double media = (currentMetrics[0] +
+				currentMetrics[1] +
+				currentMetrics[2] +
+				currentMetrics[3] +
+				currentMetrics[4] +
+				currentMetrics[5])/6;
 		return media;
 		
 	}	

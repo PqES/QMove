@@ -27,10 +27,10 @@ public class MethodsChosen implements Cloneable{
 
 	private ClassMethod method;
 	private IVariableBinding targetChosen;
-	private Metric[] metrics;
+	private double[] metrics;
 	
 
-	public MethodsChosen(ClassMethod method, IVariableBinding targetChosen, Metric[] metrics){
+	public MethodsChosen(ClassMethod method, IVariableBinding targetChosen, double[] metrics){
 		
 		this.method = method;
 		this.targetChosen = targetChosen;
@@ -54,24 +54,24 @@ public class MethodsChosen implements Cloneable{
 		return method.getClassName();
 	}
 	
-	public Metric[] getMetrics() {
+	public double[] getMetrics() {
 		return metrics;
 	}
 	
-	public double calculePercentage(Metric[] metricsOriginal){
-		double mediaMetricsOriginal = (metricsOriginal[0].getValue()+
-										metricsOriginal[1].getValue()+
-										metricsOriginal[2].getValue()+
-										metricsOriginal[3].getValue()+
-										metricsOriginal[4].getValue()+
-										metricsOriginal[5].getValue())/6;
+	public double calculePercentage(double[] metricsOriginal){
+		double mediaMetricsOriginal = (metricsOriginal[0]+
+										metricsOriginal[1]+
+										metricsOriginal[2]+
+										metricsOriginal[3]+
+										metricsOriginal[4]+
+										metricsOriginal[5])/6;
 		
-		double mediaNewMetrics = (metrics[0].getValue()+
-									metrics[1].getValue()+
-									metrics[2].getValue()+
-									metrics[3].getValue()+
-									metrics[4].getValue()+
-									metrics[5].getValue())/6;
+		double mediaNewMetrics = (metrics[0]+
+									metrics[1]+
+									metrics[2]+
+									metrics[3]+
+									metrics[4]+
+									metrics[5])/6;
 		
 		double percentageIncrease = ((mediaNewMetrics - mediaMetricsOriginal) / mediaMetricsOriginal)*100;
 		

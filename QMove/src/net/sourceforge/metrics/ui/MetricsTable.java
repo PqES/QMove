@@ -160,6 +160,7 @@ public class MetricsTable extends Tree implements Constants, SelectionListener, 
 					addChildren(row, ms, name, "");
 				}
 			}
+			
 		} catch (Throwable e) {
 			Log.logError("MetricsTable::setMetrics", e);
 		}

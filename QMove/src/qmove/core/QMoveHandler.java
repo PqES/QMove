@@ -58,7 +58,7 @@ public class QMoveHandler extends AbstractHandler {
 	ArrayList<MethodsChosen> methodsMoved = new ArrayList<MethodsChosen>();
 	public static ArrayList<Recommendation> listRecommendations = new ArrayList<Recommendation>();
 	MethodsTable methodsTable;
-	Metric[] metricsOriginal;
+	double[] metricsOriginal;
 	ArrayList<ClassMethod> methodsCanBeMoved = new ArrayList<ClassMethod>();
 	AbstractMetricSource ms;
 	IJavaElement jee;
@@ -113,7 +113,10 @@ public class QMoveHandler extends AbstractHandler {
 		
 		
 		ms = Dispatcher.getAbstractMetricSource(jee);
-	    metricsOriginal = QMoodMetrics.getQMoodMetrics(ms);
+		System.out.println("Valores das metricas atuais:");
+	    metricsOriginal = QMoodMetrics.getMetrics(ms);
+	    
+	    
 		MoveMethod checkMove = new MoveMethod(jee);
 
 		
@@ -135,7 +138,7 @@ public class QMoveHandler extends AbstractHandler {
 			
 			
 			for(int i=0; i<methodsCanBeMoved.size(); i++){
-	    	
+				System.out.println("Método "+(i+1)+" de "+methodsCanBeMoved.size());
 				aux = checkMove.startRefactoring(methodsCanBeMoved.get(i), metricsOriginal);
 				if(aux != null) methodsMoved.add(aux);		
 			}
@@ -145,7 +148,7 @@ public class QMoveHandler extends AbstractHandler {
 				continue;
 			}
 			
-			Metric[] auxMetrics = metricsOriginal;
+			double[] auxMetrics = metricsOriginal;
 			
 			Collections.sort (methodsMoved, new Comparator() {
 	            public int compare(Object o1, Object o2) {
@@ -300,6 +303,19 @@ public class QMoveHandler extends AbstractHandler {
 		}
 		
 		return null;
+		
+	}
+	
+	public void calculeMetrics(){
+		
+		double[] metrics = QMoodMetrics.getMetrics(ms);
+		
+		System.out.print("REU: "+metrics[4]);
+		System.out.print(" FLE: "+metrics[2]);
+		System.out.print(" EFE: "+metrics[0]);
+		System.out.print(" EXT: "+metrics[1]);
+		System.out.print(" FUN: "+metrics[3]);
+		System.out.println(" UND: "+metrics[5]);
 		
 	}
 	 

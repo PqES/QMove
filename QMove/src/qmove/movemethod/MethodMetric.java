@@ -7,9 +7,9 @@ import net.sourceforge.metrics.core.Metric;
 public class MethodMetric {
 
 	private IVariableBinding potential;
-	private Metric[] metrics;
+	private double[] metrics;
 	
-	public MethodMetric(IVariableBinding potential, Metric[] metrics){
+	public MethodMetric(IVariableBinding potential, double[] metrics){
 		this.potential = potential;
 		this.metrics = metrics;
 	}
@@ -20,20 +20,20 @@ public class MethodMetric {
 	}
 
 
-	public Metric[] getMetrics() {
+	public double[] getMetrics() {
 		return metrics;
 	}
 	
 	public double getMetric(int i) {
-		return metrics[i].getValue();
+		return metrics[i];
 	}
 	
-	public double getIncreasedMetricsSum(Metric[] metricsOriginal){
+	public double getIncreasedMetricsSum(double[] metricsOriginal){
 		
 		double sum=0;
 		
 		for(int i=0; i<metricsOriginal.length; i++){
-			sum += (metrics[i].getValue() - metricsOriginal[i].getValue());
+			sum += (metrics[i] - metricsOriginal[i]);
 		}
 		
 		return sum;

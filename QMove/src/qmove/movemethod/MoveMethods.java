@@ -1,5 +1,5 @@
 package qmove.movemethod;
-//MÉTODO moveMethods() RETORNA UM ARRAYLIST DE RECOMMENDATION, VER SE REALMENTE PRECISA DISSO
+//Mï¿½TODO moveMethods() RETORNA UM ARRAYLIST DE RECOMMENDATION, VER SE REALMENTE PRECISA DISSO
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -55,7 +55,7 @@ public class MoveMethods {
 	ArrayList<IMethod> iMethod;
 	Map<String, ArrayList<IMethod>> allMethods;
 	MethodsTable methodsTable;
-	Metric[] metricsOriginal;
+	double[] metricsOriginal;
 	AbstractMetricSource ms;
 	IJavaElement jee;
 	IJavaProject project;
@@ -88,7 +88,7 @@ public class MoveMethods {
 		
 			
 		ms = Dispatcher.getAbstractMetricSource(jee);
-	    metricsOriginal = QMoodMetrics.getQMoodMetrics(ms);
+	    metricsOriginal = QMoodMetrics.getMetrics(ms);
 		
 	    
 	    		
@@ -107,7 +107,7 @@ public class MoveMethods {
 				}
 			}
 	    			
-			Metric[] auxMetrics = metricsOriginal;
+			double[] auxMetrics = metricsOriginal;
 			
 			Collections.sort (methodsMoved, new Comparator() {
 	            public int compare(Object o1, Object o2) {
@@ -305,7 +305,7 @@ public class MoveMethods {
 			Thread.sleep(1000);
 			
 			ms = Dispatcher.getAbstractMetricSource(jee);
-			Metric[] metricsModified = QMoodMetrics.getQMoodMetrics(ms); //calcula as metricas apos mover mï¿½todo
+			double[] metricsModified = QMoodMetrics.getMetrics(ms); //calcula as metricas apos mover mï¿½todo
 			
 			Change undoChange = perform2.getUndoChange();
 			undoChange.perform(new NullProgressMonitor()); //move o mï¿½todo para a classe original
@@ -314,9 +314,9 @@ public class MoveMethods {
 			Thread.sleep(1000);
 			
 			if(!checkIfSomeMetricDecrease(metricsModified)){
-				System.out.println("Nenhuma métrica piora");
+				System.out.println("Nenhuma mï¿½trica piora");
 				if(checkIfSomeMetricIncrease(metricsModified)){
-					System.out.println("Pelo menos uma métrica melhora");
+					System.out.println("Pelo menos uma mï¿½trica melhora");
 					potentialFiltred.add(new MethodMetric(potential[i], metricsModified));
 					continue;
 				}
@@ -336,11 +336,11 @@ public class MoveMethods {
 	}
 	
 	
-	public boolean checkIfSomeMetricDecrease(Metric[] metricsModified){
+	public boolean checkIfSomeMetricDecrease(double[] metricsModified){
 		
 		double aux;
 		for(int i=0; i < metricsOriginal.length; i++){
-			aux = metricsModified[i].getValue() - metricsOriginal[i].getValue();
+			aux = metricsModified[i] - metricsOriginal[i];
 			if(aux < 0) {
 				return true;
 			}
@@ -350,11 +350,11 @@ public class MoveMethods {
 		return false;
 	}
 	
-	public boolean checkIfSomeMetricIncrease(Metric[] metricsModified){
+	public boolean checkIfSomeMetricIncrease(double[] metricsModified){
 		
 		double aux;
 		for(int i=0; i < metricsOriginal.length; i++){
-			aux = metricsModified[i].getValue() - metricsOriginal[i].getValue();
+			aux = metricsModified[i] - metricsOriginal[i];
 			if(aux > 0) {
 				return true;
 			}

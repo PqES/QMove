@@ -1,19 +1,26 @@
 package qmove.movemethod;
 
+import net.sourceforge.metrics.calculators.qmood.Effectiveness;
+import net.sourceforge.metrics.calculators.qmood.Extendibility;
+import net.sourceforge.metrics.calculators.qmood.Flexibility;
+import net.sourceforge.metrics.calculators.qmood.Functionality;
+import net.sourceforge.metrics.calculators.qmood.Reusability;
+import net.sourceforge.metrics.calculators.qmood.Understandability;
 import net.sourceforge.metrics.core.Log;
 import net.sourceforge.metrics.core.Metric;
 import net.sourceforge.metrics.core.MetricsPlugin;
 import net.sourceforge.metrics.core.sources.AbstractMetricSource;
 
 public class QMoodMetrics {
+	
 
 	public QMoodMetrics(){
 
 	}
 
-	public static Metric[] getQMoodMetrics(final AbstractMetricSource ms){
+	public static double[] getQMoodMetrics(final AbstractMetricSource ms){
 
-		Metric[] metrics = new Metric[6];
+		double[] metrics = new double[6];
 
 		try {
 
@@ -34,9 +41,9 @@ public class QMoodMetrics {
 						|| names[i].matches("ENT")){
 
 					Metric m = ms.getValue(names[i]);
-					metrics[j] = m;
-					System.out.print(metrics[j].getName() + ": ");
-					System.out.print(metrics[j].getValue() + " ");
+					metrics[j] = m.getValue();
+					System.out.print(m.getName() + ": ");
+					System.out.print(m.getValue() + " ");
 					j++;
 				}			 
 			} 
@@ -47,5 +54,35 @@ public class QMoodMetrics {
 			Log.logError("MetricsTable::setMetrics", e);
 		}
 		return metrics;
+	}
+	
+	public static double[] getMetrics(final AbstractMetricSource ms){
+		
+		double[] metrics = new double[6];
+		
+		Effectiveness efe = new Effectiveness();
+		Extendibility ext = new Extendibility();
+		Flexibility fle = new Flexibility();
+		Functionality fun = new Functionality();
+		Reusability reu = new Reusability();
+		Understandability und = new Understandability();
+			
+		metrics[2] = efe.calculateEfe(ms);
+		metrics[3] =  ext.calculateExt(ms);
+		metrics[1] = fle.calculateFle(ms);
+		metrics[4] = fun.calculateFun(ms);
+		metrics[0] = reu.calculateReu(ms);
+		metrics[5] = und.calculateUnd(ms);
+		
+
+		System.out.print("REU: "+metrics[0]);
+		System.out.print(" FLE: "+metrics[1]);
+		System.out.print(" EFE: "+metrics[2]);
+		System.out.print(" EXT: "+metrics[3]);
+		System.out.print(" FUN: "+metrics[4]);
+		System.out.println(" UND: "+metrics[5]);
+		
+		return metrics;
+		
 	}
 }

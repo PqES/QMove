@@ -33,6 +33,7 @@ import net.sourceforge.metrics.core.MetricsPlugin;
 import net.sourceforge.metrics.core.sources.AbstractMetricSource;
 import net.sourceforge.metrics.core.sources.Dispatcher;
 import net.sourceforge.metrics.core.sources.IGraphContributor;
+import qmove.core.QMoveHandler;
 
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.CoreException;
@@ -103,6 +104,7 @@ public class MetricsView extends ViewPart implements ISelectionListener, IMetric
 	private Cursor wait;
 	private Cursor normal;
 	private IJavaElement selection;
+	public static boolean flag;
 
 	/**
 	 * The constructor.
@@ -135,6 +137,7 @@ public class MetricsView extends ViewPart implements ISelectionListener, IMetric
 		mActions.fillActionBars(actionBars);
 		MetricsPlugin.getDefault().addPropertyChangeListener(this);
 		MetricsBuilder.addMetricsProgressListener(this);
+		flag = false;
 	}
 
 	private void createStatusBar(Composite c) {
@@ -258,6 +261,7 @@ public class MetricsView extends ViewPart implements ISelectionListener, IMetric
 					table.setMetrics(ms);
 					table.setCursor(getNormalCursor(table.getDisplay()));
 					setPartName(getTitlePrefix(selection).toString());
+					flag = true;
 				}
 			}
 		});

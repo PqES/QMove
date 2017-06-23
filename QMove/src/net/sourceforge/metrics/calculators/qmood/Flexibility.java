@@ -28,6 +28,7 @@ import net.sourceforge.metrics.core.Avg;
 import net.sourceforge.metrics.core.Constants;
 import net.sourceforge.metrics.core.Metric;
 import net.sourceforge.metrics.core.sources.AbstractMetricSource;
+import qmove.movemethod.MoveMethod;
 
 /**
  * Calculator for the Flexibility metric - QMOOD
@@ -58,8 +59,18 @@ public class Flexibility extends Calculator implements Constants {
 						 + 0.50*averages.get("typeMOA").getValue() 
 						 + 0.50*averages.get("typeNOPM").getValue(); 
 			source.setValue(new Metric(FLE,valor));
+			MoveMethod.flags[2] = true;
 		} catch (Exception e) {
 			source.setValue(new Metric(FLE, 0));
 		}
+	}
+	
+	public double calculateFle(AbstractMetricSource source){
+			Map<String,Avg> averages = source.getAverages();
+			double valor = 0.25*averages.get("typeDAM").getValue() 
+						 - 0.25*averages.get("typeDCC").getValue() 
+						 + 0.50*averages.get("typeMOA").getValue() 
+						 + 0.50*averages.get("typeNOPM").getValue(); 
+			return valor;
 	}
 }

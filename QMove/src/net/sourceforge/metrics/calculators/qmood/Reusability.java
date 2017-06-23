@@ -28,6 +28,7 @@ import net.sourceforge.metrics.core.Avg;
 import net.sourceforge.metrics.core.Constants;
 import net.sourceforge.metrics.core.Metric;
 import net.sourceforge.metrics.core.sources.AbstractMetricSource;
+import qmove.movemethod.MoveMethod;
 
 /**
  * Calculator for the Reusability metric - QMOOD
@@ -59,8 +60,19 @@ public class Reusability extends Calculator implements Constants {
 						 + 0.50*averages.get("typeCIS").getValue()
 						 + 0.50*source.getValue(Metric.DSC).getValue();
 			source.setValue(new Metric(REU,valor));
+			MoveMethod.flags[4] = true;
 		} catch (Exception e) {
 			source.setValue(new Metric(REU, 0));
 		}
+	}
+	
+	public double calculateReu(AbstractMetricSource source){
+			Map<String,Avg> averages = source.getAverages();
+			double valor =  
+						 - 0.25*averages.get("typeDCC").getValue()
+						 + 0.25*averages.get("typeCAM").getValue() 
+						 + 0.50*averages.get("typeCIS").getValue()
+						 + 0.50*source.getValue(Metric.DSC).getValue();
+			return valor;
 	}
 }

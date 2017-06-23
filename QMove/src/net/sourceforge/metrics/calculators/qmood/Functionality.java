@@ -28,6 +28,7 @@ import net.sourceforge.metrics.core.Avg;
 import net.sourceforge.metrics.core.Constants;
 import net.sourceforge.metrics.core.Metric;
 import net.sourceforge.metrics.core.sources.AbstractMetricSource;
+import qmove.movemethod.MoveMethod;
 
 /**
  * Calculator for the Functionality metric - QMOOD  
@@ -59,8 +60,19 @@ public class Functionality extends Calculator implements Constants {
 						 + 0.22*source.getValue(Metric.NOH).getValue();
 					 	 //+ 0.22*averages.get("typeNOH").getValue();
 			source.setValue(new Metric(FUN,valor));
+			MoveMethod.flags[3] = true;
 		} catch (Exception e) {
 			source.setValue(new Metric(FUN, 0));
 		}
+	}
+	
+	public double calculateFun(AbstractMetricSource source){
+			Map<String,Avg> averages = source.getAverages();
+			double valor = 0.12*averages.get("typeCAM").getValue() 
+						 - 0.22*averages.get("typeNOPM").getValue() 
+						 + 0.22*averages.get("typeCIS").getValue() 
+						 + 0.22*source.getValue(Metric.DSC).getValue()
+						 + 0.22*source.getValue(Metric.NOH).getValue();
+			return valor;
 	}
 }
