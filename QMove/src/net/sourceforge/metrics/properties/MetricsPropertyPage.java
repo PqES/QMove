@@ -82,12 +82,13 @@ public class MetricsPropertyPage extends PropertyPage implements Constants {
 		GridData data = new GridData(GridData.FILL);
 		data.grabExcessHorizontalSpace = true;
 		composite.setLayoutData(data);
-
+		//composite.setVisible(true);
 		check = new Button(composite, SWT.CHECK);
 		check.setText("Enable Metrics");
 		IProject p = getProject();
 		try {
 			check.setSelection(p.hasNature(PLUGIN_ID + ".nature"));
+			//check.setSelection(true);
 		} catch (Throwable e) {
 			Log.logError("Error gettng project nature.", e);
 		}
@@ -177,7 +178,7 @@ public class MetricsPropertyPage extends PropertyPage implements Constants {
 		/**
 		 * Write all state to persistent properties in the given project
 		 * 
-		 * @param p
+		 * @param jProject
 		 */
 		public void persistState() {
 			TableTreeItem[] items = getItems();

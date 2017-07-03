@@ -10,9 +10,11 @@ import javax.inject.Inject;
 import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
+import org.eclipse.core.internal.resources.Project;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IProjectDescription;
 import org.eclipse.core.resources.IWorkspaceRoot;
+import org.eclipse.core.resources.IncrementalProjectBuilder;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -42,6 +44,7 @@ import net.sourceforge.metrics.core.sources.AbstractMetricSource;
 import net.sourceforge.metrics.core.sources.Dispatcher;
 import qmove.movemethod.QMoodMetrics;
 import qmove.movemethod.Recommendation;
+import qmove.utils.SingletonNullProgressMonitor;
 import qmove.utils.qMooveUtils;
 import qmove.compilation.AllMethods;
 import qmove.movemethod.ClassMethod;
@@ -61,12 +64,12 @@ public class QMoveHandler extends AbstractHandler {
 	double[] metricsOriginal;
 	ArrayList<ClassMethod> methodsCanBeMoved = new ArrayList<ClassMethod>();
 	AbstractMetricSource ms;
-	IJavaElement jee;
-	public static IProject p = null;
+	IJavaElement jeCopy;
+	public static IProject iProject = null;
 	public static IJavaProject jproject;
 	ArrayList<IMethod> iMethod = new ArrayList<IMethod>();
 	Map<String, ArrayList<IMethod>> allMethods;
-	private IJavaProject projectTemp;
+	//private IJavaProject projectTemp;
 	
 
 	@Override
@@ -89,18 +92,23 @@ public class QMoveHandler extends AbstractHandler {
             return null;
         }
 		
-		IJavaElement je = (IJavaElement) selection.getFirstElement();
-		jproject = je.getJavaProject();
+		//IJavaElement je = (IJavaElement) selection.getFirstElement();
+		Project projectRoot = (Project) selection.getFirstElement();
+		//jproject = je.getJavaProject();
 		//p = (IProject) jproject.getResource();
-		p = jproject.getProject();
+		//p = jproject.getProject();
+		iProject = projectRoot.getProject();
 		
 	
 			
 		try {
-			
-			allMethods = qMooveUtils.getClassesMethods(p);
+			System.out.println("Lendo projeto: "+iProject.getName());
+			allMethods = qMooveUtils.getClassesMethods(iProject);
+			System.out.println("Projeto lido com sucesso!");
 			//getMethodsProject((IJavaElement) selection.getFirstElement());
+			System.out.println("Clonando projeto "+iProject.getName());
 			getMethodsClone();
+			System.out.println("Projeto clonado com sucesso!");
 			
 		} catch (JavaModelException e) {	
 			e.printStackTrace();
@@ -111,15 +119,31 @@ public class QMoveHandler extends AbstractHandler {
 		}
 		
 		
+		/*try {
+			jeCopy.getJavaProject().getProject().build(IncrementalProjectBuilder.INCREMENTAL_BUILD, SingletonNullProgressMonitor.getNullProgressMonitor());
+			Job.getJobManager().join(ResourcesPlugin.FAMILY_MANUAL_BUILD, SingletonNullProgressMonitor.getNullProgressMonitor());
+		} catch (OperationCanceledException | InterruptedException e2) {
+			// TODO Auto-generated catch block
+			e2.printStackTrace();
+		} catch (CoreException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}*/
 		
-		ms = Dispatcher.getAbstractMetricSource(jee);
+		
+		metricsOriginal = Dispatcher.calculateAbstractMetricSource(jeCopy.getJavaProject()).getQmoodVariables();
 		System.out.println("Valores das metricas atuais:");
-	    metricsOriginal = QMoodMetrics.getMetrics(ms);
-	    
-	    
-		MoveMethod checkMove = new MoveMethod(jee);
-
+		for(int k=0;k<metricsOriginal.length;k++)
+			System.out.print(metricsOriginal[k]+" ");
+		System.out.println();
 		
+//		ms = Dispatcher.getAbstractMetricSource(jeCopy);
+//		metricsOriginal = QMoodMetrics.getMetrics(ms);
+	    
+	    
+		MoveMethod checkMove = new MoveMethod(jeCopy);
+
+		System.out.print("Verificando metodos que podem ser movidos: ");
 		for(int i=0; i<methods.size(); i++){
 			try {
 				if(checkMove.ckeckIfMethodCanBeMoved(methods.get(i)))
@@ -132,6 +156,9 @@ public class QMoveHandler extends AbstractHandler {
 		
 		MethodsChosen aux;
 		int qmoveID = 0;
+		
+		
+		System.out.println(methodsCanBeMoved.size());
 	    
 		while(methodsCanBeMoved.size() > 0){
 			
@@ -213,7 +240,7 @@ public class QMoveHandler extends AbstractHandler {
 	
 	public void getMethodsProject(IJavaElement je) throws JavaModelException {
 		IJavaProject project = je.getJavaProject();
-	    p = (IProject)project.getResource();
+	    iProject = (IProject)project.getResource();
 	    if (project.isOpen()) {
 	    	IPackageFragment[] packages = project.getPackageFragments();
 		      for (IPackageFragment mypackage : packages) {
@@ -238,7 +265,7 @@ public class QMoveHandler extends AbstractHandler {
 		
 		IJavaProject projectTemp = JavaCore.create(cloneProject());
 	    //Thread.sleep(10000);
-	    jee = projectTemp.getPrimaryElement();
+	    jeCopy = projectTemp.getPrimaryElement();
 	   // if (projectTemp.isOpen()) {
 	    	IPackageFragment[] packages = projectTemp.getPackageFragments();
 		      for (IPackageFragment mypackage : packages) {
@@ -261,12 +288,12 @@ public class QMoveHandler extends AbstractHandler {
 	public IProject cloneProject() throws CoreException{
 		IProgressMonitor m = new NullProgressMonitor();
 	    IWorkspaceRoot workspaceRoot = ResourcesPlugin.getWorkspace().getRoot();
-	    IProjectDescription projectDescription = p.getDescription();
+	    IProjectDescription projectDescription = iProject.getDescription();
 	    String cloneName = "Temp";
 	    // create clone project in workspace
 	    IProjectDescription cloneDescription = workspaceRoot.getWorkspace().newProjectDescription(cloneName);
 	    // copy project files
-	    p.copy(cloneDescription, true, m);
+	    iProject.copy(cloneDescription, true, m);
 	    IProject clone = workspaceRoot.getProject(cloneName);
 	    
 	    cloneDescription.setNatureIds(projectDescription.getNatureIds());

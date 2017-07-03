@@ -579,5 +579,54 @@ public abstract class AbstractMetricSource implements Constants, Serializable {
 	public int hashCode() {
 		return getHandle().hashCode();
 	}
+	
+	public void printQmoodEvalFunct(){
+		System.out.println("Flexibilidade: "+getValue(FLE));
+		System.out.println("Reusabilidade: "+getValue(REU));
+		System.out.println("Entendimento: "+getValue(UND));
+		//--
+		System.out.println("Extensibilidade: "+getValue(EXT));
+		System.out.println("Funcionalidade: "+getValue(FUN));
+		System.out.println("Efetividade: "+getValue(EFE));
+	}
+	
+	public double[] getQmoodVariables(){
+		return new double[]{getValue(REU).getValue(),
+							getValue(FLE).getValue(),
+							getValue(EFE).getValue(),
+							getValue(EXT).getValue(),
+							getValue(FUN).getValue(),
+							getValue(UND).getValue()							 
+							};
+	}
+	
+	public double getQmoodValue(){
+		return getValue(FLE).getValue()+getValue(REU).getValue()+getValue(UND).getValue();
+	}
+	
+	public String getQmoodEvalFunctAsString(){
+		StringBuffer sb = new StringBuffer();
+		sb.append("Flexibilidade: "+getValue(FLE));
+		sb.append("Reusabilidade: "+getValue(REU));
+		sb.append("Entendimento: "+getValue(UND));
+		//--
+		sb.append("Extensibilidade: "+getValue(EXT));
+		sb.append("Funcionalidade: "+getValue(FUN));
+		sb.append("Efetividade: "+getValue(EFE));
+		return sb.toString();
+	}
+	
+	public String getQmoodEvalFunctAsHTML(){
+		StringBuffer sb = new StringBuffer();
+		sb.append("Flexibilidade: "+getValue(FLE)+"<br />");
+		sb.append("Reusabilidade: "+getValue(REU)+"<br />");
+		sb.append("Entendimento: "+getValue(UND)+"<br />");
+		//--
+		sb.append("Extensibilidade: "+getValue(EXT));
+		sb.append("Funcionalidade: "+getValue(FUN));
+		sb.append("Efetividade: "+getValue(EFE));
+		
+		return sb.toString();
+	}
 
 }

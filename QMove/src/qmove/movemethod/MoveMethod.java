@@ -5,6 +5,7 @@ import java.util.Arrays;
 
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.resources.IWorkspace;
+import org.eclipse.core.resources.IncrementalProjectBuilder;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -37,6 +38,7 @@ import net.sourceforge.metrics.core.sources.AbstractMetricSource;
 import net.sourceforge.metrics.core.sources.Dispatcher;
 import net.sourceforge.metrics.ui.MetricsView;
 import qmove.core.QMoveHandler;
+import qmove.utils.SingletonNullProgressMonitor;
 
 @SuppressWarnings("restriction")
 public class MoveMethod {
@@ -180,9 +182,12 @@ public class MoveMethod {
 				job.join();*/
 				
 			
-			workspace.run(perform, new NullProgressMonitor()); //move o m�todo para calcular m�tricas
+			//workspace.run(perform, new NullProgressMonitor()); //move o m�todo para calcular m�tricas
+			//IProgressMonitor nullProgressMonitor = new NullProgressMonitor();
+			workspace.run(perform, SingletonNullProgressMonitor.getNullProgressMonitor());
+			Job.getJobManager().join(perform, SingletonNullProgressMonitor.getNullProgressMonitor());
 			
-			Thread.sleep(1000);
+			//Thread.sleep(1000);
 			
 			/*boolean auxbol = false;
 			do{
@@ -198,13 +203,24 @@ public class MoveMethod {
 				flags[ii] = false;
 			}
 			*/
-			AbstractMetricSource ms = Dispatcher.getAbstractMetricSource(je);
 			
-			double[] metricsModified = QMoodMetrics.getMetrics(ms); //calcula as metricas apos mover m�todo
+//			AbstractMetricSource ms = Dispatcher.getAbstractMetricSource(je);
+//			
+//			double[] metricsModified = QMoodMetrics.getMetrics(ms); //calcula as metricas apos mover m�todo
+			je.getJavaProject().getProject().build(IncrementalProjectBuilder.INCREMENTAL_BUILD, SingletonNullProgressMonitor.getNullProgressMonitor());
+			Job.getJobManager().join(ResourcesPlugin.FAMILY_MANUAL_BUILD, SingletonNullProgressMonitor.getNullProgressMonitor());
+			double[] metricsModified = Dispatcher.calculateAbstractMetricSource(je.getJavaProject()).getQmoodVariables();
+			for(int k=0;k<metricsModified.length;k++)
+				System.out.print(metricsModified[k]+" ");
+			System.out.println();
 
 			
 			Change undoChange = perform.getUndoChange();
-			undoChange.perform(new NullProgressMonitor());
+			//undoChange.perform(new NullProgressMonitor());
+			//IProgressMonitor nullProgressMonitor2 = new NullProgressMonitor();
+			undoChange.perform(SingletonNullProgressMonitor.getNullProgressMonitor());
+			Job.getJobManager().join(perform, SingletonNullProgressMonitor.getNullProgressMonitor());
+			
 			
 			/*Job job2 = new Job("My Job2") {
 			    
@@ -229,6 +245,10 @@ public class MoveMethod {
 				job2.join();*/
 			
 			//Thread.sleep(1000);
+			
+			je.getJavaProject().getProject().build(IncrementalProjectBuilder.INCREMENTAL_BUILD, SingletonNullProgressMonitor.getNullProgressMonitor());
+			Job.getJobManager().join(ResourcesPlugin.FAMILY_MANUAL_BUILD, SingletonNullProgressMonitor.getNullProgressMonitor());
+			
 			
 			
 			if(!checkIfSomeMetricDecrease(metricsModified)){
