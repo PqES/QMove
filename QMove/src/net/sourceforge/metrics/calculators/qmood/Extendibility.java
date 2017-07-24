@@ -28,7 +28,7 @@ import net.sourceforge.metrics.core.Avg;
 import net.sourceforge.metrics.core.Constants;
 import net.sourceforge.metrics.core.Metric;
 import net.sourceforge.metrics.core.sources.AbstractMetricSource;
-import qmove.movemethod.MoveMethod;
+
 
 /**
  * Calculator for the Extendibility metric - QMOOD
@@ -59,7 +59,6 @@ public class Extendibility extends Calculator implements Constants {
 						 + 0.5*averages.get("typeMFA").getValue() 
 						 + 0.5*averages.get("typeNOPM").getValue(); 
 			source.setValue(new Metric(EXT,valor));
-			MoveMethod.flags[1] = true;
 		} catch (Exception e) {
 			source.setValue(new Metric(EXT, 0));
 		}

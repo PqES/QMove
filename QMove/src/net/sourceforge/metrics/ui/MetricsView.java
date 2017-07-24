@@ -553,6 +553,7 @@ public class MetricsView extends ViewPart implements ISelectionListener, IMetric
 	 * @see net.sourceforge.metrics.core.MetricsBuilder.MetricsProgressListener#pending (java.lang.String)
 	 */
 	public void pending(IJavaElement current) {
+		System.out.println(queued);
 		setStatus("Queued: " + queued + "\tCalculating now: " + current.getElementName(), shouldBeBusy(current));
 	}
 
@@ -592,6 +593,7 @@ public class MetricsView extends ViewPart implements ISelectionListener, IMetric
 
 			public void run() {
 				progressBar.setMaximum(queued);
+				System.out.println(queued);
 				mActions.disable();
 			}
 		});

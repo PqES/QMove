@@ -34,14 +34,19 @@ import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.internal.core.JavaProject;
 import org.eclipse.ui.IViewPart;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.handlers.HandlerUtil;
+
+import net.sourceforge.metrics.builder.MetricsBuilder;
+import net.sourceforge.metrics.core.Log;
 import net.sourceforge.metrics.core.Metric;
 import net.sourceforge.metrics.core.sources.AbstractMetricSource;
 import net.sourceforge.metrics.core.sources.Dispatcher;
+import net.sourceforge.metrics.properties.MetricsPropertyPage;
 import qmove.movemethod.QMoodMetrics;
 import qmove.movemethod.Recommendation;
 import qmove.utils.SingletonNullProgressMonitor;
@@ -70,6 +75,7 @@ public class QMoveHandler extends AbstractHandler {
 	ArrayList<IMethod> iMethod = new ArrayList<IMethod>();
 	Map<String, ArrayList<IMethod>> allMethods;
 	//private IJavaProject projectTemp;
+	public static boolean isOver = false;
 	
 
 	@Override
@@ -92,12 +98,17 @@ public class QMoveHandler extends AbstractHandler {
             return null;
         }
 		
+	   
+		
 		//IJavaElement je = (IJavaElement) selection.getFirstElement();
-		Project projectRoot = (Project) selection.getFirstElement();
+		
 		//jproject = je.getJavaProject();
 		//p = (IProject) jproject.getResource();
 		//p = jproject.getProject();
-		iProject = projectRoot.getProject();
+		JavaProject jp = (JavaProject) selection.getFirstElement();
+		iProject = jp.getProject();
+		//iProject = (IProject) selection.getFirstElement();
+		
 		
 	
 			
@@ -131,12 +142,40 @@ public class QMoveHandler extends AbstractHandler {
 		}*/
 		
 		
-		metricsOriginal = Dispatcher.calculateAbstractMetricSource(jeCopy.getJavaProject()).getQmoodVariables();
+		//metricsOriginal = Dispatcher.calculateAbstractMetricSource(jeCopy.getJavaProject()).getQmoodVariables();
+		//metricsOriginal = Dispatcher.calculateAbstractMetricSource(projectRoot.getJavaProject()).getQmoodVariables();
+		
+		/*while(MetricsBuilder.getCalculatorThread() == null){
+			
+		}*/
+		
+		
+		/*synchronized(MetricsBuilder.getCalculatorThread()){
+            try{
+                System.out.print("Calculando metricas... ");
+                MetricsBuilder.getCalculatorThread().wait();
+            }catch(InterruptedException e){
+                e.printStackTrace();
+            }
+ 
+            System.out.println("Pronto!");
+		}*/
+		
+		/*while(!isOver){
+			
+		}
+		
+		isOver = false;*/
+		
+		ms = Dispatcher.getAbstractMetricSource(jeCopy);
 		System.out.println("Valores das metricas atuais:");
-		for(int k=0;k<metricsOriginal.length;k++)
+		metricsOriginal = QMoodMetrics.getMetrics(ms);
+		qMooveUtils.initializeCsvFile();
+		qMooveUtils.writeCsvFile("Current", metricsOriginal);
+		/*for(int k=0;k<metricsOriginal.length;k++)
 			System.out.print(metricsOriginal[k]+" ");
 		System.out.println();
-		
+		*/
 //		ms = Dispatcher.getAbstractMetricSource(jeCopy);
 //		metricsOriginal = QMoodMetrics.getMetrics(ms);
 	    
@@ -313,20 +352,24 @@ public class QMoveHandler extends AbstractHandler {
 		String methodClone = method.getElementName();
 		String classClone = method.getCompilationUnit().getParent().getElementName() + "." + method.getDeclaringType().getElementName();
 		
-		for (Map.Entry<String, ArrayList<IMethod>> entrada : allMethods.entrySet()) {
-			
-			classOriginal = entrada.getKey();
-			
-			for(int i=0; i<entrada.getValue().size(); i++){
+		try{
+			for (Map.Entry<String, ArrayList<IMethod>> entrada : allMethods.entrySet()) {
 				
-				methodOriginal = entrada.getValue().get(i).getElementName();
+				classOriginal = entrada.getKey();
 				
-				if(classClone.compareTo(classOriginal) == 0
-					&& methodClone.compareTo(methodOriginal) == 0){
-				
-					return entrada.getValue().get(i);
+				for(int i=0; i<entrada.getValue().size(); i++){
+					
+					methodOriginal = entrada.getValue().get(i).getElementName();
+					
+					if(classClone.compareTo(classOriginal) == 0
+						&& methodClone.compareTo(methodOriginal) == 0){
+					
+						return entrada.getValue().get(i);
+					}
 				}
 			}
+		} catch(NullPointerException n){
+			System.out.println(n.getMessage());
 		}
 		
 		return null;
@@ -347,3 +390,6 @@ public class QMoveHandler extends AbstractHandler {
 	}
 	 
 }
+
+
+

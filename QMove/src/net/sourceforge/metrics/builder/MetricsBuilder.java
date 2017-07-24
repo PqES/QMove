@@ -33,6 +33,8 @@ import net.sourceforge.metrics.core.Log;
 import net.sourceforge.metrics.core.sources.AbstractMetricSource;
 import net.sourceforge.metrics.core.sources.Cache;
 import net.sourceforge.metrics.core.sources.Dispatcher;
+import qmove.core.QMoveHandler;
+import qmove.movemethod.MoveMethod;
 
 import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.IProject;
@@ -74,6 +76,10 @@ public class MetricsBuilder extends IncrementalProjectBuilder {
 
 	public MetricsBuilder() {
 		super();
+	}
+	
+	public static CalculatorThread getCalculatorThread(){
+		return thread;
 	}
 
 	public static void addMetricsProgressListener(IMetricsProgressListener l) {
@@ -164,6 +170,17 @@ public class MetricsBuilder extends IncrementalProjectBuilder {
 		if (thread == null) {
 			thread = new CalculatorThread();
 			thread.start();
+			/*synchronized(thread){
+	              try{
+	                  System.out.print("Calculando métricas... ");
+	                  thread.wait();
+	              }catch(InterruptedException e){
+	                  e.printStackTrace();
+	              }
+	   
+	              System.out.println("Pronto!");
+	              QMoveHandler.isOver = true;
+	        }*/
 		}
 	}
 
@@ -765,41 +782,51 @@ public class MetricsBuilder extends IncrementalProjectBuilder {
 
 		@Override
 		public void run() {
-			try {
-				// Log.logMessage("New Calculator Thread is born...");
-				while (thread == Thread.currentThread()) {
-					checkPaused();
-					current = queue.dequeue(); // blocks!
-					checkPaused();
-					if (!Thread.currentThread().isInterrupted()) {
-						IJavaElement currentElm = current.getElement();
-						// Log.logMessage("Executing " +
-						// current.getHandleIdentifier());
-						notifier.firePending(currentElm);
-						current.execute();
-						// only notify if we weren't aborted
+			//synchronized(thread){
+				try {
+				//	System.out.println(queue.size());
+					// Log.logMessage("New Calculator Thread is born...");
+					//Log.logMessage(""+queue.size());
+					while (thread == Thread.currentThread()) {
+						checkPaused();
+						current = queue.dequeue(); // blocks!
+						//Log.logMessage(""+queue.size());
+						//System.out.println(queue.size());
+						checkPaused();
 						if (!Thread.currentThread().isInterrupted()) {
-							if (current.getMovedFrom() != null) {
-								notifier.fireMoved(currentElm, current.getMovedFrom());
-							}
-							notifier.fireCompleted(currentElm, current.getResult());
-							if (currentElm.getElementType() == IJavaElement.JAVA_PROJECT) {
-								synchronized (currentProjects) {
-									currentProjects.remove(currentElm.getHandleIdentifier());
+							IJavaElement currentElm = current.getElement();
+							// Log.logMessage("Executing " +
+							// current.getHandleIdentifier());
+							notifier.firePending(currentElm);
+							current.execute();
+							// only notify if we weren't aborted
+							if (!Thread.currentThread().isInterrupted()) {
+								if (current.getMovedFrom() != null) {
+									notifier.fireMoved(currentElm, current.getMovedFrom());
 								}
-								notifier.fireProjectCompleted((IJavaProject) currentElm, false);
+								notifier.fireCompleted(currentElm, current.getResult());
+								if (currentElm.getElementType() == IJavaElement.JAVA_PROJECT) {
+									synchronized (currentProjects) {
+										currentProjects.remove(currentElm.getHandleIdentifier());
+									}
+									notifier.fireProjectCompleted((IJavaProject) currentElm, false);
+								}
 							}
 						}
 					}
+				} catch (InterruptedException e) {
+					// Log.logMessage("Interrupted!");
+				} catch (Throwable t) {
+					Log.logError("CalculatorThread terminated.", t);
+				} finally {
+					// make sure a new thread is created next time around
+					thread = null;
+					
+					//notify();
 				}
-			} catch (InterruptedException e) {
-				// Log.logMessage("Interrupted!");
-			} catch (Throwable t) {
-				Log.logError("CalculatorThread terminated.", t);
-			} finally {
-				// make sure a new thread is created next time around
-				thread = null;
-			}
+				
+			//}
+			//notifyAll();
 		}
 
 		private void checkPaused() throws InterruptedException {

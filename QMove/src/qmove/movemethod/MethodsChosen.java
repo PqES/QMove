@@ -20,6 +20,7 @@ import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 import org.eclipse.ltk.core.refactoring.participants.MoveRefactoring;
 
 import net.sourceforge.metrics.core.Metric;
+import qmove.utils.SingletonNullProgressMonitor;
 
 @SuppressWarnings("restriction")
 public class MethodsChosen implements Cloneable{
@@ -81,22 +82,26 @@ public class MethodsChosen implements Cloneable{
 	
 	public void move() throws OperationCanceledException, CoreException{
 	        
-		
-			MoveInstanceMethodProcessor processor2 = new MoveInstanceMethodProcessor(method.getMethod(),
+		try{
+			MoveInstanceMethodProcessor processor2 = null;
+			while(processor2 == null){
+					
+					processor2 = new MoveInstanceMethodProcessor(method.getMethod(),
 					JavaPreferencesSettings.getCodeGenerationSettings(method.getMethod().getJavaProject()));
-
+			}
+			
 			processor2.checkInitialConditions(new NullProgressMonitor());
 			
-			IVariableBinding[] potential = processor2.getPossibleTargets();
+			//IVariableBinding[] potential = processor2.getPossibleTargets();
 			
-			IVariableBinding candidate = null;
+			IVariableBinding candidate = targetChosen;
 			
-			for(int j=0; j<potential.length; j++){
-				if(targetChosen.toString().compareTo(potential[j].toString()) == 0){
+			/*for(int j=0; j<potential.length; j++){
+				if(targetChosen.toString().compareTo(potential[j].toString()) == 0 || targetChosen.equals(potential[j])){
 					candidate = potential[j];
 					break;
 				}
-			}
+			}*/
 			
 			processor2.setTarget(candidate);
 			processor2.setInlineDelegator(true);
@@ -106,19 +111,29 @@ public class MethodsChosen implements Cloneable{
 			Refactoring refactoring2 = new MoveRefactoring(processor2);
 			refactoring2.checkInitialConditions(new NullProgressMonitor());
 			
-			RefactoringStatus status2 = refactoring2.checkAllConditions(new NullProgressMonitor());
+			/*RefactoringStatus status2 = refactoring2.checkAllConditions(new NullProgressMonitor());
 			if (status2.getSeverity() != RefactoringStatus.OK) return;
-		
+			 */
+			
 			final CreateChangeOperation create2 = new CreateChangeOperation(
 						new CheckConditionsOperation(refactoring2,
 						CheckConditionsOperation.ALL_CONDITIONS),
 						RefactoringStatus.FATAL);
 			
 			PerformChangeOperation perform2 = new PerformChangeOperation(create2);
+			
+			ResourcesPlugin.getWorkspace().run(perform2, new NullProgressMonitor());
+			
+			/*IWorkspace workspace2 = ResourcesPlugin.getWorkspace();
+			workspace2.run(perform2, new NullProgressMonitor());*/
 		
-			IWorkspace workspace2 = ResourcesPlugin.getWorkspace();
-			workspace2.run(perform2, new NullProgressMonitor());
+		} catch(NullPointerException n){
+			System.out.println(n.getMessage());
 		}
+	}
+		
+	
+	
 	
 	@Override
     public MethodsChosen clone() throws CloneNotSupportedException {

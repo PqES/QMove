@@ -28,7 +28,6 @@ import net.sourceforge.metrics.core.Avg;
 import net.sourceforge.metrics.core.Constants;
 import net.sourceforge.metrics.core.Metric;
 import net.sourceforge.metrics.core.sources.AbstractMetricSource;
-import qmove.movemethod.MoveMethod;
 
 /**
  * Calculator for the Effectiveness metric - QMOOD
@@ -60,7 +59,6 @@ public class Effectiveness extends Calculator implements Constants {
 						 + 0.2*averages.get("typeMFA").getValue()
 						 + 0.2*averages.get("typeNOPM").getValue();
 			source.setValue(new Metric(EFE,valor));
-			MoveMethod.flags[0] = true;
 		} catch (Exception e) {
 			source.setValue(new Metric(EFE, 0));
 		}
