@@ -47,6 +47,7 @@ import net.sourceforge.metrics.core.Metric;
 import net.sourceforge.metrics.core.sources.AbstractMetricSource;
 import net.sourceforge.metrics.core.sources.Dispatcher;
 import net.sourceforge.metrics.properties.MetricsPropertyPage;
+import net.sourceforge.metrics.ui.MetricsView;
 import qmove.movemethod.QMoodMetrics;
 import qmove.movemethod.Recommendation;
 import qmove.utils.SingletonNullProgressMonitor;
@@ -75,6 +76,7 @@ public class QMoveHandler extends AbstractHandler {
 	ArrayList<IMethod> iMethod = new ArrayList<IMethod>();
 	Map<String, ArrayList<IMethod>> allMethods;
 	//private IJavaProject projectTemp;
+	public static boolean queueIsZero;
 	public static boolean isOver = false;
 	
 
@@ -105,6 +107,9 @@ public class QMoveHandler extends AbstractHandler {
 		//jproject = je.getJavaProject();
 		//p = (IProject) jproject.getResource();
 		//p = jproject.getProject();
+		
+		//JavaProject funciona quando projeto esta em Package Explorer
+		//Project funciona quando esta em Project Explorer, 
 		JavaProject jp = (JavaProject) selection.getFirstElement();
 		iProject = jp.getProject();
 		//iProject = (IProject) selection.getFirstElement();
@@ -166,6 +171,19 @@ public class QMoveHandler extends AbstractHandler {
 		}
 		
 		isOver = false;*/
+		System.out.print("Calculando metricas do estado atual de "+iProject.getName()+"... ");
+		
+		queueIsZero = false;
+		while(queueIsZero == false){
+			try {
+				Thread.sleep(100);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		
+		System.out.println("Pronto!");
 		
 		ms = Dispatcher.getAbstractMetricSource(jeCopy);
 		System.out.println("Valores das metricas atuais:");
@@ -266,7 +284,7 @@ public class QMoveHandler extends AbstractHandler {
 	    
 	    IProgressMonitor m = new NullProgressMonitor();
 	    IWorkspaceRoot workspaceRoot = ResourcesPlugin.getWorkspace().getRoot();
-	    IProject project = workspaceRoot.getProject("Temp");
+	    IProject project = workspaceRoot.getProject(jeCopy.getJavaProject().getProject().getName());
 	    try {
 			project.delete(true, m);
 		} catch (CoreException e) {
@@ -328,7 +346,7 @@ public class QMoveHandler extends AbstractHandler {
 		IProgressMonitor m = new NullProgressMonitor();
 	    IWorkspaceRoot workspaceRoot = ResourcesPlugin.getWorkspace().getRoot();
 	    IProjectDescription projectDescription = iProject.getDescription();
-	    String cloneName = "Temp";
+	    String cloneName = iProject.getName()+"Temp";
 	    // create clone project in workspace
 	    IProjectDescription cloneDescription = workspaceRoot.getWorkspace().newProjectDescription(cloneName);
 	    // copy project files

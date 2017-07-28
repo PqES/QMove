@@ -69,6 +69,7 @@ public class MetricsBuilder extends IncrementalProjectBuilder {
 	private static Queue queue = new Queue();
 	private static CalculatorThread thread = null;
 	private static ProgressQueue notifier = new ProgressQueue(queue);
+	public static int sizeQueue;
 
 	private static Set<String> currentProjects = new HashSet<String>();
 
@@ -107,9 +108,9 @@ public class MetricsBuilder extends IncrementalProjectBuilder {
 	@Override
 	protected IProject[] build(int kind, @SuppressWarnings("rawtypes") Map args, IProgressMonitor monitor) throws CoreException {
 		try {
-			if (hasErrors(getProject())) {
-				return null;
-			}
+			//if (hasErrors(getProject())) {
+			//	return null;
+			//}
 			checkCancel(monitor);
 			IJavaProject currentProject = JavaCore.create(getProject());
 			if (currentProject == null) {
@@ -786,12 +787,9 @@ public class MetricsBuilder extends IncrementalProjectBuilder {
 				try {
 				//	System.out.println(queue.size());
 					// Log.logMessage("New Calculator Thread is born...");
-					//Log.logMessage(""+queue.size());
 					while (thread == Thread.currentThread()) {
 						checkPaused();
 						current = queue.dequeue(); // blocks!
-						//Log.logMessage(""+queue.size());
-						//System.out.println(queue.size());
 						checkPaused();
 						if (!Thread.currentThread().isInterrupted()) {
 							IJavaElement currentElm = current.getElement();
@@ -813,6 +811,13 @@ public class MetricsBuilder extends IncrementalProjectBuilder {
 								}
 							}
 						}
+						MetricsBuilder.sizeQueue = queue.size();
+						if(queue.size()!=0){
+							QMoveHandler.queueIsZero = false;
+						}else{
+							QMoveHandler.queueIsZero = true;
+						}
+						
 					}
 				} catch (InterruptedException e) {
 					// Log.logMessage("Interrupted!");
@@ -821,6 +826,7 @@ public class MetricsBuilder extends IncrementalProjectBuilder {
 				} finally {
 					// make sure a new thread is created next time around
 					thread = null;
+					
 					
 					//notify();
 				}

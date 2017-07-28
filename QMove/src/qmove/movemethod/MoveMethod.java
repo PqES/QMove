@@ -158,7 +158,8 @@ public class MoveMethod {
 	
 				Refactoring refactoring = new MoveRefactoring(processor2);
 				refactoring.checkInitialConditions(new NullProgressMonitor());
-	
+				//RefactoringStatus status = refactoring.checkAllConditions(new NullProgressMonitor());
+				//if(!status.isOK()) return false;
 			
 				//RefactoringStatus status = refactoring.checkAllConditions(new NullProgressMonitor());
 				//if (status.getSeverity() != RefactoringStatus.OK) return false;
@@ -183,9 +184,18 @@ public class MoveMethod {
 		   
 		              System.out.println("Pronto!");
 		        }
-	        
 		        
-		        Thread.sleep(10000);
+		      System.out.print("Recalculando metricas... ");
+		      
+		        QMoveHandler.queueIsZero = false;
+				while(QMoveHandler.queueIsZero == false){
+					Thread.sleep(100);
+				}
+	        
+				System.out.println("Pronto!");
+				
+		        
+		        //Thread.sleep(10000);
 		        
 		     
 		        
@@ -282,7 +292,16 @@ public class MoveMethod {
 	              System.out.println("Pronto!");
 	        }
 	        
-	        Thread.sleep(1000);
+	        System.out.print("Recalculando metricas... ");	
+	        
+	        QMoveHandler.queueIsZero = false;
+			while(QMoveHandler.queueIsZero == false){
+				Thread.sleep(100);
+			}
+			
+			System.out.println("Pronto!");
+	        
+	        //Thread.sleep(1000);
 	        
 	        /*RebuildThread rebuild2 = new RebuildThread(je);
 			rebuild2.start();
