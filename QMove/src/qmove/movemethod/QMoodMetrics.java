@@ -56,9 +56,9 @@ public class QMoodMetrics {
 		return metrics;
 	}
 	
-	public static double[] getMetrics(final AbstractMetricSource ms){
+public static double[] getMetrics(final AbstractMetricSource ms){
 		
-		double[] metrics = new double[6];
+		double[] metrics = new double[17];
 		
 		Effectiveness efe = new Effectiveness();
 		Extendibility ext = new Extendibility();
@@ -81,6 +81,33 @@ public class QMoodMetrics {
 		System.out.print(" EXT: "+metrics[3]);
 		System.out.print(" FUN: "+metrics[4]);
 		System.out.println(" UND: "+metrics[5]);
+		
+		MetricsPlugin plugin = MetricsPlugin.getDefault();
+		String[] names = plugin.getMetricIds();
+		int j=6;
+		for (int i = 0; i < names.length; i++) {
+
+			if (names[i].matches("NOM")
+					|| names[i].matches("NOP")
+					|| names[i].matches("DSC")
+					|| names[i].matches("ANA")
+					|| names[i].matches("MFA")
+					|| names[i].matches("CIS")
+					|| names[i].matches("MOA")
+					|| names[i].matches("DAM")
+					|| names[i].matches("CAM")
+					|| names[i].matches("DCC")
+					|| names[i].matches("NOH")){
+
+				Metric m = ms.getValue(names[i]);
+				metrics[j] = m.getValue();
+				System.out.print(m.getName() + ": ");
+				System.out.print(m.getValue() + " ");
+				j++;
+			}			 
+		}
+		
+		System.out.println();
 		
 		return metrics;
 		

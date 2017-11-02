@@ -75,44 +75,18 @@ public class QMoveHandler extends AbstractHandler {
 	public static IJavaProject jproject;
 	ArrayList<IMethod> iMethod = new ArrayList<IMethod>();
 	Map<String, ArrayList<IMethod>> allMethods;
-	//private IJavaProject projectTemp;
 	public static boolean queueIsZero;
 	public static boolean isOver = false;
+	MethodsChosen bestMethod;
 	
 
 	@Override
 	public Object execute(ExecutionEvent event) throws ExecutionException {
 
-		IWorkbenchPage wp=PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
-
-		//Find desired view :
-		IViewPart myView=wp.findView("qmove.views.QMoveView");
-
-		//Hide the view :
-		wp.hideView(myView);
+		hideViewIfOpen();
 		
-		TreeSelection selection = (TreeSelection)HandlerUtil.getCurrentSelection(event);
-	 
-		if (selection == null || selection.getFirstElement() == null) {
-            // Nothing selected, do nothing
-            MessageDialog.openInformation(HandlerUtil.getActiveShell(event),
-                    "Information", "Please select a project");
-            return null;
-        }
+		iProject = getProjectFromWorkspace(event);
 		
-	   
-		
-		//IJavaElement je = (IJavaElement) selection.getFirstElement();
-		
-		//jproject = je.getJavaProject();
-		//p = (IProject) jproject.getResource();
-		//p = jproject.getProject();
-		
-		//JavaProject funciona quando projeto esta em Package Explorer
-		//Project funciona quando esta em Project Explorer, 
-		JavaProject jp = (JavaProject) selection.getFirstElement();
-		iProject = jp.getProject();
-		//iProject = (IProject) selection.getFirstElement();
 		
 		
 	
@@ -121,7 +95,6 @@ public class QMoveHandler extends AbstractHandler {
 			System.out.println("Lendo projeto: "+iProject.getName());
 			allMethods = qMooveUtils.getClassesMethods(iProject);
 			System.out.println("Projeto lido com sucesso!");
-			//getMethodsProject((IJavaElement) selection.getFirstElement());
 			System.out.println("Clonando projeto "+iProject.getName());
 			getMethodsClone();
 			System.out.println("Projeto clonado com sucesso!");
@@ -135,42 +108,6 @@ public class QMoveHandler extends AbstractHandler {
 		}
 		
 		
-		/*try {
-			jeCopy.getJavaProject().getProject().build(IncrementalProjectBuilder.INCREMENTAL_BUILD, SingletonNullProgressMonitor.getNullProgressMonitor());
-			Job.getJobManager().join(ResourcesPlugin.FAMILY_MANUAL_BUILD, SingletonNullProgressMonitor.getNullProgressMonitor());
-		} catch (OperationCanceledException | InterruptedException e2) {
-			// TODO Auto-generated catch block
-			e2.printStackTrace();
-		} catch (CoreException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}*/
-		
-		
-		//metricsOriginal = Dispatcher.calculateAbstractMetricSource(jeCopy.getJavaProject()).getQmoodVariables();
-		//metricsOriginal = Dispatcher.calculateAbstractMetricSource(projectRoot.getJavaProject()).getQmoodVariables();
-		
-		/*while(MetricsBuilder.getCalculatorThread() == null){
-			
-		}*/
-		
-		
-		/*synchronized(MetricsBuilder.getCalculatorThread()){
-            try{
-                System.out.print("Calculando metricas... ");
-                MetricsBuilder.getCalculatorThread().wait();
-            }catch(InterruptedException e){
-                e.printStackTrace();
-            }
- 
-            System.out.println("Pronto!");
-		}*/
-		
-		/*while(!isOver){
-			
-		}
-		
-		isOver = false;*/
 		System.out.print("Calculando metricas do estado atual de "+iProject.getName()+"... ");
 		
 		queueIsZero = false;
@@ -178,7 +115,6 @@ public class QMoveHandler extends AbstractHandler {
 			try {
 				Thread.sleep(100);
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
@@ -189,13 +125,7 @@ public class QMoveHandler extends AbstractHandler {
 		System.out.println("Valores das metricas atuais:");
 		metricsOriginal = QMoodMetrics.getMetrics(ms);
 		qMooveUtils.initializeCsvFile();
-		qMooveUtils.writeCsvFile("Current", metricsOriginal);
-		/*for(int k=0;k<metricsOriginal.length;k++)
-			System.out.print(metricsOriginal[k]+" ");
-		System.out.println();
-		*/
-//		ms = Dispatcher.getAbstractMetricSource(jeCopy);
-//		metricsOriginal = QMoodMetrics.getMetrics(ms);
+		
 	    
 	    
 		MoveMethod checkMove = new MoveMethod(jeCopy);
@@ -206,7 +136,6 @@ public class QMoveHandler extends AbstractHandler {
 				if(checkMove.ckeckIfMethodCanBeMoved(methods.get(i)))
 						methodsCanBeMoved.add(methods.get(i));
 			} catch (OperationCanceledException | CoreException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}	
 		}
@@ -218,7 +147,7 @@ public class QMoveHandler extends AbstractHandler {
 		System.out.println(methodsCanBeMoved.size());
 	    
 		while(methodsCanBeMoved.size() > 0){
-			
+			qMooveUtils.writeCsvFile("Current", metricsOriginal);
 			
 			
 			for(int i=0; i<methodsCanBeMoved.size(); i++){
@@ -238,9 +167,12 @@ public class QMoveHandler extends AbstractHandler {
 	            public int compare(Object o1, Object o2) {
 	                MethodsChosen m1 = (MethodsChosen) o1;
 	                MethodsChosen m2 = (MethodsChosen) o2;
-	                return m1.calculePercentage(auxMetrics) > m2.calculePercentage(auxMetrics) ? -1 : (m1.calculePercentage(auxMetrics) < m2.calculePercentage(auxMetrics) ? +1 : 0);
+	                return m1.getSumMetrics() > m2.getSumMetrics() ? -1 : (m1.getSumMetrics() < m2.getSumMetrics() ? +1 : 0);
 	            }
-	        });
+			});
+			
+			bestMethod = methodsMoved.get(0);
+			
 			
 			ArrayList<MethodsChosen> clone = new ArrayList<MethodsChosen>(methodsMoved.size());
 			    for (MethodsChosen item : methodsMoved){
@@ -255,20 +187,31 @@ public class QMoveHandler extends AbstractHandler {
 			methodsTable = new MethodsTable(auxMetrics, clone);
 		
 			
-			metricsOriginal = methodsMoved.get(0).getMetrics();
+			metricsOriginal = bestMethod.getMetrics();
 			
 			try {
-				methodsMoved.get(0).move();
+				bestMethod.move();
 			} catch (OperationCanceledException | CoreException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 			
-			methodsCanBeMoved.removeIf(methodsCanBeMoved -> methodsCanBeMoved.getMethod() == methodsMoved.get(0).getMethod());
 			
-			listRecommendations.add(new Recommendation (++qmoveID, methodsTable, methodsMoved.get(0), methodsMoved.get(0).calculePercentage(auxMetrics), getMethod(methodsMoved.get(0).getMethod())));
+			qMooveUtils.writeRecInFile(++qmoveID,
+					bestMethod.getMethod().getCompilationUnit().getParent().getElementName()+"."
+					+ bestMethod.getMethod().getDeclaringType().getElementName()+"::"
+					+ bestMethod.getMethod().getElementName(),
+					bestMethod.getTargetChosen().getType().getPackage().getName()+"."
+					+ bestMethod.getTargetChosen().getType().getName(), 
+					bestMethod.calculePercentage(auxMetrics));
+
+			
+			methodsCanBeMoved.removeIf(methodsCanBeMoved -> methodsCanBeMoved.getMethod() == bestMethod.getMethod());
+			
+			listRecommendations.add(new Recommendation (qmoveID, methodsTable, methodsMoved.get(0), methodsMoved.get(0).calculePercentage(auxMetrics), getMethod(methodsMoved.get(0).getMethod())));
 			
 			methodsMoved.removeAll(methodsMoved);
+			
+			bestMethod = null;
 			
 			
 		}
@@ -288,11 +231,43 @@ public class QMoveHandler extends AbstractHandler {
 	    try {
 			project.delete(true, m);
 		} catch (CoreException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	   
 		return null;
+	}
+	
+	private void hideViewIfOpen(){
+		IWorkbenchPage wp=PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
+		
+		//Find desired view :
+		IViewPart myView=wp.findView("qmove.views.QMoveView");
+
+		//Hide the view :
+		wp.hideView(myView);
+		
+	}
+	
+	private IProject getProjectFromWorkspace(ExecutionEvent event){
+		
+		TreeSelection selection = (TreeSelection)HandlerUtil.getCurrentSelection(event);
+		 
+		if (selection == null || selection.getFirstElement() == null) {
+            // Nothing selected, do nothing
+            MessageDialog.openInformation(HandlerUtil.getActiveShell(event), "Information", "Please select a project");
+            return null;
+        }
+		
+		JavaProject jp;
+		Project p;
+		
+		try{
+			jp = (JavaProject) selection.getFirstElement();
+			return jp.getProject();
+		} catch(ClassCastException e){
+			p = (Project) selection.getFirstElement();
+			return p.getProject();
+		}
 	}
 	
 	public void getMethodsProject(IJavaElement je) throws JavaModelException {
@@ -391,19 +366,6 @@ public class QMoveHandler extends AbstractHandler {
 		}
 		
 		return null;
-		
-	}
-	
-	public void calculeMetrics(){
-		
-		double[] metrics = QMoodMetrics.getMetrics(ms);
-		
-		System.out.print("REU: "+metrics[4]);
-		System.out.print(" FLE: "+metrics[2]);
-		System.out.print(" EFE: "+metrics[0]);
-		System.out.print(" EXT: "+metrics[1]);
-		System.out.print(" FUN: "+metrics[3]);
-		System.out.println(" UND: "+metrics[5]);
 		
 	}
 	 

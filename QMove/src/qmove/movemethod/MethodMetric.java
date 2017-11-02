@@ -38,6 +38,17 @@ public class MethodMetric {
 		
 		return sum;
 	}
+	
+	public boolean hasBetterMetricsThan(double[] candidateMetrics){
+		//Calibracao 1
+		double sumMetrics = metrics[0]+metrics[1]+metrics[2]+metrics[3]+metrics[4]+metrics[5];
+		double sumCandidateMetrics = candidateMetrics[0]+candidateMetrics[1]+candidateMetrics[2]+candidateMetrics[3]+candidateMetrics[4]+candidateMetrics[5];
+		if(sumMetrics > sumCandidateMetrics){
+			return true;
+		}
+		
+		return false;
+	}
 
 	
 }
