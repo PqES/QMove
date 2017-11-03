@@ -255,14 +255,20 @@ public class MoveMethod {
 
 	private boolean hadMetricsIncreased() {
 		
-			//Calibracao 1
+			//Calibracao 2
 			for(int i=0; i <= 5; i++){
+				if(i==2){
+					continue;
+				}
 				if(metricsModified[i] - metricsOriginal[i] < 0){
 					return false;
 				}
 			}
 			
 			for(int i=0; i <= 5; i++){
+				if(i==2){
+					continue;
+				}
 				if(metricsModified[i] - metricsOriginal[i] > 0){
 					return true;
 				}
