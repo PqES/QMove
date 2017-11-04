@@ -83,7 +83,7 @@ public class Recommendation{
 	}
 
 	public String getClassTargetName() {
-		return  targetChosen.getName();
+		return  targetChosen.getType().getName();
 	}
 
 	public double getIncrease() {

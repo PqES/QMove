@@ -81,8 +81,8 @@ public class MethodsChosen implements Cloneable{
 	}
 	
 	public double getSumMetrics(){
-		//Calibracao 2
-		double sumMetrics = metrics[0]+metrics[1]+metrics[3]+metrics[4]+metrics[5];
+		//Calibracao 3
+		double sumMetrics = metrics[0]+metrics[1]+metrics[2]+metrics[3]+metrics[4]+metrics[5];
 		return sumMetrics;
 		
 	}
