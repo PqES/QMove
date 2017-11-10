@@ -40,14 +40,14 @@ public class MethodMetric {
 	}
 	
 	public boolean hasBetterMetricsThan(double[] candidateMetrics){
-		//Calibracao 3
-		double sumMetrics = metrics[0]+metrics[1]+metrics[2]+metrics[3]+metrics[4]+metrics[5];
-		double sumCandidateMetrics = candidateMetrics[0]+candidateMetrics[1]+candidateMetrics[2]+candidateMetrics[3]+candidateMetrics[4]+candidateMetrics[5];
-		if(sumMetrics > sumCandidateMetrics){
-			return true;
-		}
-		
-		return false;
+		//Calibracao 4
+		if(metrics[1] > candidateMetrics[1]
+			&& metrics[3] > candidateMetrics[3]
+			&& metrics[5] > candidateMetrics[5]){
+				return true;
+			} else {
+				return false;
+			}
 	}
 
 	

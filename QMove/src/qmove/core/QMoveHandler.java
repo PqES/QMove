@@ -66,7 +66,7 @@ public class QMoveHandler extends AbstractHandler {
 	ArrayList<ClassMethod> methods = new ArrayList<ClassMethod>();
 	ArrayList<MethodsChosen> methodsMoved = new ArrayList<MethodsChosen>();
 	public static ArrayList<Recommendation> listRecommendations = new ArrayList<Recommendation>();
-	MethodsTable methodsTable;
+	//MethodsTable methodsTable;
 	double[] metricsOriginal;
 	ArrayList<ClassMethod> methodsCanBeMoved = new ArrayList<ClassMethod>();
 	AbstractMetricSource ms;
@@ -184,7 +184,7 @@ public class QMoveHandler extends AbstractHandler {
 					}
 			}
 			
-			methodsTable = new MethodsTable(auxMetrics, clone);
+			//methodsTable = new MethodsTable(auxMetrics, clone);
 		
 			
 			metricsOriginal = bestMethod.getMetrics();
@@ -207,7 +207,7 @@ public class QMoveHandler extends AbstractHandler {
 			
 			methodsCanBeMoved.removeIf(methodsCanBeMoved -> methodsCanBeMoved.getMethod() == bestMethod.getMethod());
 			
-			listRecommendations.add(new Recommendation (qmoveID, methodsTable, methodsMoved.get(0), methodsMoved.get(0).calculePercentage(auxMetrics), getMethod(methodsMoved.get(0).getMethod())));
+			//listRecommendations.add(new Recommendation (qmoveID, methodsTable, methodsMoved.get(0), methodsMoved.get(0).calculePercentage(auxMetrics), getMethod(methodsMoved.get(0).getMethod())));
 			
 			methodsMoved.removeAll(methodsMoved);
 			

@@ -154,8 +154,8 @@ public class MoveMethod {
 
 				candidate = potential[i];
 
-				System.out.println("Calculando refactoring para "
-						+ candidate.getType().getName());
+				System.out.print("Movendo metodo para "
+						+ candidate.getType().getName()+"... ");
 
 				processor2.setTarget(candidate);
 				processor2.setInlineDelegator(true);
@@ -170,8 +170,10 @@ public class MoveMethod {
 						RefactoringStatus.FATAL);
 
 				PerformChangeOperation perform = new PerformChangeOperation(create);
+				ResourcesPlugin.getWorkspace().run(perform, SingletonNullProgressMonitor.getNullProgressMonitor());
+				System.out.println("Pronto!");
 
-				MoveThread move = new MoveThread(perform);
+				/*MoveThread move = new MoveThread(perform);
 				move.start();
 
 				synchronized (move) {
@@ -183,7 +185,7 @@ public class MoveMethod {
 					}
 
 					System.out.println("Pronto!");
-				}
+				}*/
 
 				System.out.print("Recalculando metricas... ");
 
@@ -202,9 +204,14 @@ public class MoveMethod {
 								+ candidate.getType().getPackage().getName() + "." + candidate.getName(),
 						metricsModified);
 				
+				System.out.print("Desfazendo move method... ");
+
 				Change undoChange = perform.getUndoChange();
+				undoChange.perform(SingletonNullProgressMonitor.getNullProgressMonitor());
+				System.out.println("Pronto!");
+
 				
-				UndoMoveThread undo = new UndoMoveThread(undoChange);
+				/*UndoMoveThread undo = new UndoMoveThread(undoChange);
 				undo.start();
 
 				synchronized (undo) {
@@ -216,7 +223,7 @@ public class MoveMethod {
 					}
 
 					System.out.println("Pronto!");
-				}
+				}*/
 
 				System.out.print("Recalculando metricas... ");
 
@@ -255,18 +262,19 @@ public class MoveMethod {
 
 	private boolean hadMetricsIncreased() {
 		
-		//Calibracao 3
-		double sumOriginal=0, sumModified=0;
-		for(int i=0; i <= 5; i++){
-			sumOriginal +=metricsOriginal[i];
-			sumModified +=metricsModified[i];
-		}
-			
-		if(sumModified > sumOriginal){
+		//Calibracao 4
+		if(metricsModified[1] < metricsOriginal[1]
+			|| metricsModified[3] < metricsOriginal[3]
+			|| metricsModified[5] < metricsOriginal[5]){
+			return false;
+		} else if(metricsModified[1] == metricsOriginal[1]
+				&& metricsModified[3] == metricsOriginal[3]
+				&& metricsModified[5] == metricsOriginal[5]){
+			return false;
+		} else {
 			return true;
 		}
-				
-		return false;
+		
 	}
 
 	public boolean choosePotential() throws OperationCanceledException, CoreException {
@@ -296,7 +304,7 @@ public class MoveMethod {
 
 }
 
-class MoveThread extends Thread {
+/*class MoveThread extends Thread {
 
 	private PerformChangeOperation perform;
 
@@ -315,11 +323,11 @@ class MoveThread extends Thread {
 			notify();
 		}
 	}
-}
+}*/
 
 
 
-class UndoMoveThread extends Thread {
+/*class UndoMoveThread extends Thread {
 
 	private Change undoChange;
 
@@ -338,4 +346,4 @@ class UndoMoveThread extends Thread {
 			notify();
 		}
 	}
-}
+}*/
