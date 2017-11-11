@@ -40,10 +40,10 @@ public class MethodMetric {
 	}
 	
 	public boolean hasBetterMetricsThan(double[] candidateMetrics){
-		//Calibracao 4
-		if(metrics[1] > candidateMetrics[1]
-			&& metrics[3] > candidateMetrics[3]
-			&& metrics[5] > candidateMetrics[5]){
+		//Calibracao 5
+		if(metrics[11] >= candidateMetrics[11]
+			&& metrics[14] > candidateMetrics[14]
+			&& metrics[15] < candidateMetrics[15]){
 				return true;
 			} else {
 				return false;

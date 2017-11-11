@@ -262,14 +262,14 @@ public class MoveMethod {
 
 	private boolean hadMetricsIncreased() {
 		
-		//Calibracao 4
-		if(metricsModified[1] < metricsOriginal[1]
-			|| metricsModified[3] < metricsOriginal[3]
-			|| metricsModified[5] < metricsOriginal[5]){
+		//Calibracao 5
+		if(metricsModified[11] < metricsOriginal[11]
+			|| metricsModified[14] < metricsOriginal[14]
+			|| metricsModified[15] > metricsOriginal[15]){
 			return false;
-		} else if(metricsModified[1] == metricsOriginal[1]
-				&& metricsModified[3] == metricsOriginal[3]
-				&& metricsModified[5] == metricsOriginal[5]){
+		} else if(metricsModified[11] == metricsOriginal[11]
+				&& metricsModified[14] == metricsOriginal[14]
+				&& metricsModified[15] == metricsOriginal[15]){
 			return false;
 		} else {
 			return true;

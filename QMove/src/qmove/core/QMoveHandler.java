@@ -167,7 +167,7 @@ public class QMoveHandler extends AbstractHandler {
 	            public int compare(Object o1, Object o2) {
 	                MethodsChosen m1 = (MethodsChosen) o1;
 	                MethodsChosen m2 = (MethodsChosen) o2;
-	                return m1.getSumMetrics() > m2.getSumMetrics() ? -1 : (m1.getSumMetrics() < m2.getSumMetrics() ? +1 : 0);
+	                return m1.getSumMetrics(auxMetrics) > m2.getSumMetrics(auxMetrics) ? -1 : (m1.getSumMetrics(auxMetrics) < m2.getSumMetrics(auxMetrics) ? +1 : 0);
 	            }
 			});
 			
