@@ -66,7 +66,7 @@ public class QMoveHandler extends AbstractHandler {
 	ArrayList<ClassMethod> methods = new ArrayList<ClassMethod>();
 	ArrayList<MethodsChosen> methodsMoved = new ArrayList<MethodsChosen>();
 	public static ArrayList<Recommendation> listRecommendations = new ArrayList<Recommendation>();
-	//MethodsTable methodsTable;
+	MethodsTable methodsTable;
 	double[] metricsOriginal;
 	ArrayList<ClassMethod> methodsCanBeMoved = new ArrayList<ClassMethod>();
 	AbstractMetricSource ms;
@@ -174,7 +174,7 @@ public class QMoveHandler extends AbstractHandler {
 			bestMethod = methodsMoved.get(0);
 			
 			
-			ArrayList<MethodsChosen> clone = new ArrayList<MethodsChosen>(methodsMoved.size());
+			/*ArrayList<MethodsChosen> clone = new ArrayList<MethodsChosen>(methodsMoved.size());
 			    for (MethodsChosen item : methodsMoved){
 					try {
 						clone.add(item.clone());
@@ -184,7 +184,7 @@ public class QMoveHandler extends AbstractHandler {
 					}
 			}
 			
-			//methodsTable = new MethodsTable(auxMetrics, clone);
+			methodsTable = new MethodsTable(auxMetrics, clone);*/
 		
 			
 			metricsOriginal = bestMethod.getMetrics();

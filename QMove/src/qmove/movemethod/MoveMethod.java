@@ -154,8 +154,8 @@ public class MoveMethod {
 
 				candidate = potential[i];
 
-				System.out.print("Movendo metodo para "
-						+ candidate.getType().getName()+"... ");
+				System.out.println("Calculando refactoring para "
+						+ candidate.getType().getName());
 
 				processor2.setTarget(candidate);
 				processor2.setInlineDelegator(true);
@@ -170,22 +170,8 @@ public class MoveMethod {
 						RefactoringStatus.FATAL);
 
 				PerformChangeOperation perform = new PerformChangeOperation(create);
+
 				ResourcesPlugin.getWorkspace().run(perform, SingletonNullProgressMonitor.getNullProgressMonitor());
-				System.out.println("Pronto!");
-
-				/*MoveThread move = new MoveThread(perform);
-				move.start();
-
-				synchronized (move) {
-					try {
-						System.out.print("Aguardando o metodo ser movido... ");
-						move.wait();
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}
-
-					System.out.println("Pronto!");
-				}*/
 
 				System.out.print("Recalculando metricas... ");
 
@@ -204,26 +190,9 @@ public class MoveMethod {
 								+ candidate.getType().getPackage().getName() + "." + candidate.getName(),
 						metricsModified);
 				
-				System.out.print("Desfazendo move method... ");
-
 				Change undoChange = perform.getUndoChange();
-				undoChange.perform(SingletonNullProgressMonitor.getNullProgressMonitor());
-				System.out.println("Pronto!");
-
 				
-				/*UndoMoveThread undo = new UndoMoveThread(undoChange);
-				undo.start();
-
-				synchronized (undo) {
-					try {
-						System.out.print("Desfazendo move method... ");
-						undo.wait();
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}
-
-					System.out.println("Pronto!");
-				}*/
+				undoChange.perform(SingletonNullProgressMonitor.getNullProgressMonitor());
 
 				System.out.print("Recalculando metricas... ");
 
@@ -262,19 +231,20 @@ public class MoveMethod {
 
 	private boolean hadMetricsIncreased() {
 		
-		//Calibracao 5
-		if(metricsModified[11] < metricsOriginal[11]
-			|| metricsModified[14] < metricsOriginal[14]
-			|| metricsModified[15] > metricsOriginal[15]){
+			//Calibracao Relativa 1
+			for(int i=0; i <= 5; i++){
+				if(((metricsModified[i] - metricsOriginal[i])/ Math.abs(metricsOriginal[i]))*100 < 0){
+					return false;
+				}
+			}
+			
+			for(int i=0; i <= 5; i++){
+				if(((metricsModified[i] - metricsOriginal[i])/ Math.abs(metricsOriginal[i]))*100 > 0){
+					return true;
+				}
+			}
+				
 			return false;
-		} else if(metricsModified[11] == metricsOriginal[11]
-				&& metricsModified[14] == metricsOriginal[14]
-				&& metricsModified[15] == metricsOriginal[15]){
-			return false;
-		} else {
-			return true;
-		}
-		
 	}
 
 	public boolean choosePotential() throws OperationCanceledException, CoreException {
@@ -293,7 +263,7 @@ public class MoveMethod {
 
 			for (int i = 1; i < potentialFiltred.size(); i++) {
 
-				if (potentialFiltred.get(i).hasBetterMetricsThan(candidateChosen.getMetrics()))
+				if (potentialFiltred.get(i).hasBetterMetricsThan(metricsOriginal, candidateChosen.getMetrics()))
 					candidateChosen = potentialFiltred.get(i);
 			}
 
@@ -303,47 +273,3 @@ public class MoveMethod {
 	}
 
 }
-
-/*class MoveThread extends Thread {
-
-	private PerformChangeOperation perform;
-
-	public MoveThread(PerformChangeOperation perform) {
-		this.perform = perform;
-	}
-
-	@Override
-	public void run() {
-		synchronized (this) {
-			try {
-				ResourcesPlugin.getWorkspace().run(perform, SingletonNullProgressMonitor.getNullProgressMonitor());
-			} catch (CoreException e) {
-				e.printStackTrace();
-			}
-			notify();
-		}
-	}
-}*/
-
-
-
-/*class UndoMoveThread extends Thread {
-
-	private Change undoChange;
-
-	public UndoMoveThread(Change undoChange) {
-		this.undoChange = undoChange;
-	}
-
-	@Override
-	public void run() {
-		synchronized (this) {
-			try {
-				undoChange.perform(SingletonNullProgressMonitor.getNullProgressMonitor());
-			} catch (CoreException e) {
-				e.printStackTrace();
-			}
-			notify();
-		}
-	}
-}*/
