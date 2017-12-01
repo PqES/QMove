@@ -231,14 +231,20 @@ public class MoveMethod {
 
 	private boolean hadMetricsIncreased() {
 		
-			//Calibracao Relativa 1
+			//Calibracao Relativa 2
 			for(int i=0; i <= 5; i++){
+				if(i==2){
+					continue;
+				}
 				if(((metricsModified[i] - metricsOriginal[i])/ Math.abs(metricsOriginal[i]))*100 < 0){
 					return false;
 				}
 			}
 			
 			for(int i=0; i <= 5; i++){
+				if(i==2){
+					continue;
+				}
 				if(((metricsModified[i] - metricsOriginal[i])/ Math.abs(metricsOriginal[i]))*100 > 0){
 					return true;
 				}
