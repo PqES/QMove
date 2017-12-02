@@ -231,26 +231,19 @@ public class MoveMethod {
 
 	private boolean hadMetricsIncreased() {
 		
-			//Calibracao Relativa 2
-			for(int i=0; i <= 5; i++){
-				if(i==2){
-					continue;
-				}
-				if(((metricsModified[i] - metricsOriginal[i])/ Math.abs(metricsOriginal[i]))*100 < 0){
-					return false;
-				}
-			}
+		//Calibracao Relativa 3
+		double sumOriginal=0, sumModified=0;
+		
+		for(int i=0; i <= 5; i++){
+			sumOriginal +=metricsOriginal[i];
+			sumModified +=metricsModified[i];
+		}
 			
-			for(int i=0; i <= 5; i++){
-				if(i==2){
-					continue;
-				}
-				if(((metricsModified[i] - metricsOriginal[i])/ Math.abs(metricsOriginal[i]))*100 > 0){
+		if(((sumModified - sumOriginal)/ Math.abs(sumOriginal))*100 > 0){
 					return true;
-				}
-			}
-				
-			return false;
+		}
+		
+		return false;
 	}
 
 	public boolean choosePotential() throws OperationCanceledException, CoreException {
