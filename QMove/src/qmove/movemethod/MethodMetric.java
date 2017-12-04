@@ -40,14 +40,18 @@ public class MethodMetric {
 	}
 	
 	public boolean hasBetterMetricsThan(double[] metricsOriginal, double[] candidateMetrics){
-		//Calibracao Relativa 4
-		double sumMetricsOriginal = metricsOriginal[1]+metricsOriginal[3]+metricsOriginal[5];
-		double sumMetrics = metrics[1]+metrics[3]+metrics[5];
-		double sumCandidateMetrics = candidateMetrics[1]+candidateMetrics[3]+candidateMetrics[5];
-		double percentageActual = ((sumMetrics-sumMetricsOriginal)/Math.abs(sumMetricsOriginal))*100;
-		double percentageCandidate = ((sumCandidateMetrics-sumMetricsOriginal)/Math.abs(sumMetricsOriginal))*100;
+		//Calibracao Relativa 5
+		double increaseCISActual = ((metrics[11]-metricsOriginal[11])/Math.abs(metricsOriginal[11]))*100;
+		double increaseCAMActual = ((metrics[14]-metricsOriginal[14])/Math.abs(metricsOriginal[14]))*100;
+		double increaseDCCActual = ((metricsOriginal[15]-metrics[15])/Math.abs(metrics[15]))*100;
+		double increaseActual = increaseCISActual+increaseCAMActual+increaseDCCActual;
 		
-		if(percentageActual > percentageCandidate){
+		double increaseCISCandidate = ((candidateMetrics[11]-metricsOriginal[11])/Math.abs(metricsOriginal[11]))*100;
+		double increaseCAMCandidate = ((candidateMetrics[14]-metricsOriginal[14])/Math.abs(metricsOriginal[14]))*100;
+		double increaseDCCCandidate = ((metricsOriginal[15]-candidateMetrics[15])/Math.abs(candidateMetrics[15]))*100;
+		double increaseCandidate = increaseCISCandidate+increaseCAMCandidate+increaseDCCCandidate;
+			
+		if(increaseActual > increaseCandidate){
 			return true;
 		}
 		
