@@ -682,12 +682,21 @@
             id="QMove.commands.sampleCommand"
             name="Sample Command">
       </command>
+      <command
+            categoryId="QMove.commands.category"
+            id="QMove.command.moveclass"
+            name="MoveClass">
+      </command>
    </extension>
    <extension
          point="org.eclipse.ui.handlers">
       <handler
             class="qmove.core.QMoveHandler"
             commandId="QMove.commands.sampleCommand">
+      </handler>
+      <handler
+            class="qmove.core.MoveClassHandler"
+            commandId="QMove.command.moveclass">
       </handler>
    </extension>
    <extension
@@ -706,26 +715,22 @@
          <menu
                id="QMove.menus.sampleMenu"
                label="QMove"
-               mnemonic="M">
+               mnemonic="Q">
             <command
                   commandId="QMove.commands.sampleCommand"
                   id="QMove.menus.sampleCommand"
-                  label="Start Refactoring..."
-                  mnemonic="S">
+                  label="Move Method Refactoring..."
+                  mnemonic="M"
+                  tooltip="Starts a Move Method refactorings opportunities identification...">
+            </command>
+            <command
+                  commandId="QMove.command.moveclass"
+                  label="Move Class Refactoring..."
+                  mnemonic="C"
+                  style="push"
+                  tooltip="Starts a Move Class refactorings opportunities identification...">
             </command>
          </menu>
-      </menuContribution>
-      <menuContribution
-            locationURI="toolbar:org.eclipse.ui.main.toolbar?after=additions">
-         <toolbar
-               id="QMove.toolbars.sampleToolbar">
-            <command
-                  commandId="QMove.commands.sampleCommand"
-                  icon="icons/sample.gif"
-                  id="QMove.toolbars.sampleCommand"
-                  tooltip="Say hello world">
-            </command>
-         </toolbar>
       </menuContribution>
    </extension>
    <extension

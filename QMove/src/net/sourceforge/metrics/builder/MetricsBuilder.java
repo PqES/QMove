@@ -35,6 +35,7 @@ import net.sourceforge.metrics.core.sources.Cache;
 import net.sourceforge.metrics.core.sources.Dispatcher;
 import qmove.core.QMoveHandler;
 import qmove.movemethod.MoveMethod;
+import qmove.utils.HandlerUtils;
 
 import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.IProject;
@@ -814,8 +815,10 @@ public class MetricsBuilder extends IncrementalProjectBuilder {
 						MetricsBuilder.sizeQueue = queue.size();
 						if(queue.size()!=0){
 							QMoveHandler.queueIsZero = false;
+							HandlerUtils.queueIsZero = false;
 						}else{
 							QMoveHandler.queueIsZero = true;
+							HandlerUtils.queueIsZero = true;
 						}
 						
 					}
