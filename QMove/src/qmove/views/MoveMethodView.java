@@ -73,13 +73,13 @@ import org.eclipse.ui.texteditor.ITextEditor;
 
 import java.awt.Dimension;
 import javax.swing.JScrollPane;
-import qmove.core.QMoveHandler;
-import qmove.movemethod.MoveMethods;
+
+import qmove.handlers.MoveMethodHandler;
 import qmove.movemethod.Recommendation;
-import qmove.movemethod.SliceAnnotation;
 
 
-public class QMoveView extends ViewPart{
+
+public class MoveMethodView extends ViewPart{
 
 	/**
 	 * The ID of the view as specified by the extension.
@@ -94,7 +94,7 @@ public class QMoveView extends ViewPart{
 	private Action applyRefactoringAction;
 	
 
-	public QMoveView(){
+	public MoveMethodView(){
 	}
 
 	/**
@@ -127,7 +127,7 @@ public class QMoveView extends ViewPart{
         
         // get the content for the viewer, setInput will call getElements in the
         // contentProvider
-        viewer.setInput(QMoveHandler.listRecommendations);
+        viewer.setInput(MoveMethodHandler.listRecommendations);
         // make the selection available to other views
         getSite().setSelectionProvider(viewer);
         // set the sorter for the table
@@ -171,33 +171,22 @@ public class QMoveView extends ViewPart{
                 @Override
                 public String getText(Object element) {
                 	Recommendation m = (Recommendation) element;
-                        return m.getPackageMethodName()+"."+m.getClassMethodName()+"::"+m.getMethodName();
+                        return m.getMethod();
                 }
         });
 
-        // third column is for the class origin
+        // third column is for the class destiny
         col = createTableViewerColumn(titles[2], bounds[2], 2);
         col.setLabelProvider(new ColumnLabelProvider() {
                 @Override
                 public String getText(Object element) {
                 	Recommendation m = (Recommendation) element;
-                    return m.getPackageTargetName()+"."+m.getClassTargetName();
+                    return m.getTarget();
                 }
         });
 
-        // now the class destiny
+        // apply refactoring button
         col = createTableViewerColumn(titles[3], bounds[3], 3);
-        col.setLabelProvider(new ColumnLabelProvider() {
-                @Override
-                public String getText(Object element) {
-                	Recommendation m = (Recommendation) element;
-                	String increase = String.format("%.2f",m.getIncrease());//String.valueOf(m.getIncrease());
-                    return increase+"%";
-                }
-        });
-        
-     // apply refactoring button
-        col = createTableViewerColumn(titles[4], bounds[4], 4);
         col.setLabelProvider(new ColumnLabelProvider() {
     
         	@Override
@@ -210,97 +199,7 @@ public class QMoveView extends ViewPart{
                 button.addSelectionListener(new SelectionListener() {
 
                     public void widgetSelected(SelectionEvent event) {
-                    	int id = Integer.parseInt(item.getText(0)); 
-                    	if(id == 1){
-	                    	for(int i=0; i < QMoveHandler.listRecommendations.size(); i++){
-	                    		if(id == QMoveHandler.listRecommendations.get(i).getQMoveID()){
-	                    			Recommendation r = QMoveHandler.listRecommendations.get(i);
-	                    			try {
-										move(r.getMethodOriginal(), r.getTarget());
-									} catch (OperationCanceledException | CoreException e) {
-										// TODO Auto-generated catch block
-										e.printStackTrace();
-									}
-	                    			
-	                    			JOptionPane.showMessageDialog(null, "Method "+ r.getMethodOriginal().getElementName() + " moved successfully!");
-	                    			QMoveHandler.listRecommendations.remove(i);
-	                    			
-	                    			for(int j=0; j < QMoveHandler.listRecommendations.size(); j++){
-	                    				QMoveHandler.listRecommendations.get(j).decreaseQMoveID();
-	                    			}
-	        	                    	
-	                    			
-	                    			IWorkbenchPage wp=PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
-
-	                    			//Find desired view :
-	                    			IViewPart myView=wp.findView("qmove.views.QMoveView");
-
-	                    			//Hide the view :
-	                    			wp.hideView(myView);
-	                    			try {
-										wp.showView("qmove.views.QMoveView");
-									} catch (PartInitException e) {
-										// TODO Auto-generated catch block
-										e.printStackTrace();
-									}
-	                    			
-	                    			/*
-	                    			viewer.setInput(QMoveHandler.listRecommendations);
-	                    			viewer.refresh();
-	                    			parent.redraw();
-	                    			parent.update();
-	                    			parent.pack();
-	                    			parent.layout();
-	                    	        parent.layout(true);
-	                    		*/	
-	                    			break;
-	                    		}
-	                    		
-	                    	}
-                    	}
                     	
-                    	else{
-                    		for(int i=0; i < QMoveHandler.listRecommendations.size(); i++){
-	                    		if(id == QMoveHandler.listRecommendations.get(i).getQMoveID()){
-	                    			Recommendation r = QMoveHandler.listRecommendations.get(i);
-	                    			try {
-										move(r.getMethodOriginal(), r.getTarget());
-									} catch (OperationCanceledException | CoreException e) {
-										// TODO Auto-generated catch block
-										e.printStackTrace();
-									}
-	                    			
-	                    			QMoveHandler.listRecommendations.remove(i);
-	                    		}
-	                    	}
-                    		
-                    		MoveMethods reMoveMethods = new MoveMethods(QMoveHandler.jproject, QMoveHandler.listRecommendations);
-                    		try {
-								
-                    			/*ArrayList<Recommendation> newListRecommendations = */
-                    			QMoveHandler.listRecommendations = reMoveMethods.moveMethods();
-                    			//QMoveHandler.listRecommendations = newListRecommendations;
-								//viewer.setInput(newListRecommendations);
-								IWorkbenchPage wp=PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
-
-                    			//Find desired view :
-                    			IViewPart myView=wp.findView("qmove.views.QMoveView");
-
-                    			//Hide the view :
-                    			wp.hideView(myView);
-                    			
-                    			try {
-									wp.showView("qmove.views.QMoveView");
-								} catch (PartInitException e) {
-									// TODO Auto-generated catch block
-									e.printStackTrace();
-								}
-                    			
-							} catch (ExecutionException e1) {
-								// TODO Auto-generated catch block
-								e1.printStackTrace();
-							}
-                    	}
                     }
                     
                     public void widgetDefaultSelected(SelectionEvent event) {
@@ -309,6 +208,7 @@ public class QMoveView extends ViewPart{
 
                     
                 });
+                
                 TableEditor editor = new TableEditor(item.getParent());
                 editor.grabHorizontal  = true;
                 editor.grabVertical = true;
@@ -319,8 +219,8 @@ public class QMoveView extends ViewPart{
         	
         });
         
-     // more info button
-        col = createTableViewerColumn(titles[5], bounds[5], 5);
+        // more info button
+        col = createTableViewerColumn(titles[4], bounds[4], 4);
         col.setLabelProvider(new ColumnLabelProvider() {
     
         	@Override
@@ -334,7 +234,7 @@ public class QMoveView extends ViewPart{
 
                     public void widgetSelected(SelectionEvent event) {
                     	//System.out.println(item.getText(0));
-                    	new GuiPrincipal(item.getText(0), QMoveHandler.listRecommendations).setVisible(true);
+                    	new GuiPrincipal(item.getText(0), MoveMethodHandler.listRecommendations).setVisible(true);
                     }
                     
                     public void widgetDefaultSelected(SelectionEvent event) {
@@ -368,11 +268,6 @@ public class QMoveView extends ViewPart{
         column.setMoveable(true);
         return viewerColumn;
 	}
-	
-	
-	
-	
-	
 
 	/**
 	 * Passing the focus request to the viewer's control.
@@ -391,52 +286,7 @@ public class QMoveView extends ViewPart{
 	
 		doubleClickAction = new Action() {
 			public void run() {
-				IStructuredSelection selection = (IStructuredSelection) viewer.getSelection();
-				Recommendation sug = (Recommendation) selection.getFirstElement();
 				
-
-				IFile sourceFile = (IFile) sug.getMethodOriginal().getCompilationUnit().getResource();
-				
-				//IFile sourceFile = sug.getSourceIFile();
-				//IFile targetFile = sug.getTargetIFile();
-				
-				try {
-					IJavaElement sourceJavaElement = JavaCore
-							.create(sourceFile);
-					ITextEditor sourceEditor = (ITextEditor) JavaUI
-							.openInEditor(sourceJavaElement);
-					List<Position> positions = sug.getPositions();
-					AnnotationModel annotationModel = (AnnotationModel) sourceEditor
-							.getDocumentProvider().getAnnotationModel(
-									sourceEditor.getEditorInput());
-					Iterator<Annotation> annotationIterator = annotationModel
-							.getAnnotationIterator();
-					while (annotationIterator.hasNext()) {
-						Annotation currentAnnotation = annotationIterator
-								.next();
-						if (currentAnnotation.getType().equals(
-								SliceAnnotation.EXTRACTION)) {
-							annotationModel.removeAnnotation(currentAnnotation);
-						}
-					}
-					for (Position position : positions) {
-						SliceAnnotation annotation = new SliceAnnotation(
-								SliceAnnotation.EXTRACTION,
-								sug.getAnnotationText());
-						annotationModel.addAnnotation(annotation, position);
-					}
-					Position firstPosition = positions.get(0);
-					Position lastPosition = positions.get(positions.size() - 1);
-					int offset = firstPosition.getOffset();
-					int length = lastPosition.getOffset()
-							+ lastPosition.getLength()
-							- firstPosition.getOffset();
-					sourceEditor.setHighlightRange(offset, length, true);
-				} catch (PartInitException e) {
-					e.printStackTrace();
-				} catch (JavaModelException e) {
-					e.printStackTrace();
-				}
 
 			}
 		};
@@ -452,82 +302,9 @@ public class QMoveView extends ViewPart{
 	
 	}
 	
-	public void move(IMethod method, IVariableBinding targetChosen) throws OperationCanceledException, CoreException{
-        
-		MoveInstanceMethodProcessor processor2 = new MoveInstanceMethodProcessor(method,
-				JavaPreferencesSettings.getCodeGenerationSettings(method.getJavaProject()));
-
-		processor2.checkInitialConditions(new NullProgressMonitor());
-		
-		IVariableBinding[] potential = processor2.getPossibleTargets();
-		
-		IVariableBinding candidate = null;
-		
-		for(int j=0; j<potential.length; j++){
-			if(targetChosen.toString().compareTo(potential[j].toString()) == 0){
-				candidate = potential[j];
-				break;
-			}
-		}
-		
-		processor2.setTarget(candidate);
-		processor2.setInlineDelegator(true);
-		processor2.setRemoveDelegator(true);
-		processor2.setDeprecateDelegates(false);
-
-		Refactoring refactoring2 = new MoveRefactoring(processor2);
-		refactoring2.checkInitialConditions(new NullProgressMonitor());
-		
-		RefactoringStatus status2 = refactoring2.checkAllConditions(new NullProgressMonitor());
-		if (status2.getSeverity() != RefactoringStatus.OK) return;
-	
-		final CreateChangeOperation create2 = new CreateChangeOperation(
-					new CheckConditionsOperation(refactoring2,
-					CheckConditionsOperation.ALL_CONDITIONS),
-					RefactoringStatus.FATAL);
-		
-		PerformChangeOperation perform2 = new PerformChangeOperation(create2);
-	
-		IWorkspace workspace2 = ResourcesPlugin.getWorkspace();
-		workspace2.run(perform2, new NullProgressMonitor());
-	}
-	
 	private void makeActions(){
 		applyRefactoringAction = new Action() {
-			public void run() {
-				IMethod method;
-				IVariableBinding target;
-				for(int i=0; i< QMoveHandler.listRecommendations.size(); i++){
-					method = QMoveHandler.listRecommendations.get(i).getMethodOriginal();
-					target = QMoveHandler.listRecommendations.get(i).getTarget();
-					try {
-						moveAll(method,	target);
-						//TODO Ver porque o m�todo de id 2 nao ta sendo movido (debugar) 
-					} catch (OperationCanceledException | CoreException e) {
-						
-						e.printStackTrace();
-					}
-				}
-				
-				QMoveHandler.listRecommendations.clear();
-				
-				JOptionPane.showMessageDialog(null, "All Methods Moved Successfully!");
-				
-				IWorkbenchPage wp=PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
-
-    			//Find desired view :
-    			IViewPart myView=wp.findView("qmove.views.QMoveView");
-
-    			//Hide the view :
-    			wp.hideView(myView);
-    			
-				try {
-					wp.showView("qmove.views.QMoveView");
-				} catch (PartInitException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				
+			public void run() {				
     			
 			}
 				
@@ -539,47 +316,6 @@ public class QMoveView extends ViewPart{
 				.getImageDescriptor(ISharedImages.IMG_TOOL_FORWARD));
 		applyRefactoringAction.setEnabled(false);
 	}
-	
-	public void moveAll(IMethod method, IVariableBinding targetChosen) throws OperationCanceledException, CoreException{
-        
-		MoveInstanceMethodProcessor processor2 = new MoveInstanceMethodProcessor(method,
-				JavaPreferencesSettings.getCodeGenerationSettings(method.getJavaProject()));
-
-		processor2.checkInitialConditions(new NullProgressMonitor());
-		
-		IVariableBinding[] potential = processor2.getPossibleTargets();
-		
-		IVariableBinding candidate = null;
-		
-		for(int j=0; j<potential.length; j++){
-			if(targetChosen.toString().compareTo(potential[j].toString()) == 0){
-				candidate = potential[j];
-				break;
-			}
-		}
-		
-		processor2.setTarget(candidate);
-		processor2.setInlineDelegator(true);
-		processor2.setRemoveDelegator(true);
-		processor2.setDeprecateDelegates(false);
-
-		Refactoring refactoring2 = new MoveRefactoring(processor2);
-		refactoring2.checkInitialConditions(new NullProgressMonitor());
-		
-		RefactoringStatus status2 = refactoring2.checkAllConditions(new NullProgressMonitor());
-		if (status2.getSeverity() != RefactoringStatus.OK) return;
-	
-		final CreateChangeOperation create2 = new CreateChangeOperation(
-					new CheckConditionsOperation(refactoring2,
-					CheckConditionsOperation.ALL_CONDITIONS),
-					RefactoringStatus.FATAL);
-		
-		PerformChangeOperation perform2 = new PerformChangeOperation(create2);
-	
-		IWorkspace workspace2 = ResourcesPlugin.getWorkspace();
-		workspace2.run(perform2, new NullProgressMonitor());
-	}
-	
 	
 }
 	

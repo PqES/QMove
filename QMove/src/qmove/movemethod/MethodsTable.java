@@ -1,8 +1,8 @@
 package qmove.movemethod;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import net.sourceforge.metrics.core.Metric;
+import java.util.HashMap;
+import java.util.Map;
 
 public class MethodsTable implements Serializable{
 	
@@ -11,19 +11,20 @@ public class MethodsTable implements Serializable{
 	 */
 	private static final long serialVersionUID = 1L;
 	private double[] currentMetrics;
-	private ArrayList<MethodsChosen> methods;
+	private Map<String, double[]> methods = new HashMap<String, double[]>();
+	//private ArrayList<String> methods;
 	
-	public MethodsTable(double[] metricsCurrent, ArrayList<MethodsChosen> methods){	
+	public MethodsTable(double[] currentMetrics, Map<String, double[]> methods){	
 		
-		this.currentMetrics = metricsCurrent;
+		this.currentMetrics = currentMetrics;
 		this.methods = methods;
 	}
 	
 	public String[][] getMethodsMetrics(){
 		
-		int rows = methods.size();
+		int rows = methods.size()+1;
 		double media=0, aux=0;
-		String s[][] = new String[rows+1][8];
+		String s[][] = new String[rows][8];
 		String sAux[] = getCurrentMetrics();
 		for(int i =0; i < getCurrentMetrics().length; i++){
 			s[0][i] = sAux[i];
@@ -31,21 +32,18 @@ public class MethodsTable implements Serializable{
 		
 		for(int i=1; i <= rows; i++){
 			
-			s[i][0]= "["+ methods.get(i-1).getMethod().getElementName()
-					+ ", "
-					+ methods.get(i-1).getTargetChosen().getName()
-					+ "]";
+			s[i][0]= "["+methods.get(i-1)+"]";
 		
 			for(int j=1;j<=6;j++){
 				
-				aux = methods.get(i-1).getMetrics()[j-1]
-					  - currentMetrics[j-1];
+				aux = methods.get((String) methods.keySet().toArray()[i-1])[j-1]-currentMetrics[j-1];
+				//aux = methods.get(i-1).getMetrics()[j-1]-currentMetrics[j-1];
 				
 				if(aux < 0) s[i][j] = String.format("%.5f",aux);
 				else if(aux > 0) s[i][j] = String.format("+%.5f",aux);
 				else if (aux == 0) s[i][j] = "";
 				
-				media +=  methods.get(i-1).getMetrics()[j-1];
+				media +=  methods.get((String) methods.keySet().toArray()[i-1])[j-1];
 			}
 			
 			media = (media/6) - calculeMediaCurrent();

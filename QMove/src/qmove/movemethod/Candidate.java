@@ -1,7 +1,6 @@
 package qmove.movemethod;
 
 
-import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.NullProgressMonitor;
@@ -10,6 +9,7 @@ import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.dom.IVariableBinding;
+import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.internal.corext.refactoring.structure.MoveInstanceMethodProcessor;
 import org.eclipse.jdt.internal.ui.preferences.JavaPreferencesSettings;
 import org.eclipse.ltk.core.refactoring.CheckConditionsOperation;
@@ -19,19 +19,15 @@ import org.eclipse.ltk.core.refactoring.Refactoring;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 import org.eclipse.ltk.core.refactoring.participants.MoveRefactoring;
 
-import net.sourceforge.metrics.core.Metric;
-import qmove.utils.SingletonNullProgressMonitor;
-
 @SuppressWarnings("restriction")
-public class MethodsChosen implements Cloneable{
+public class Candidate implements Cloneable{
 	
-
-	private ClassMethod method;
+	private MethodDeclaration method;
 	private IVariableBinding targetChosen;
 	private double[] metrics;
 	
 
-	public MethodsChosen(ClassMethod method, IVariableBinding targetChosen, double[] metrics){
+	public Candidate(MethodDeclaration method, IVariableBinding targetChosen, double[] metrics){
 		
 		this.method = method;
 		this.targetChosen = targetChosen;
@@ -39,8 +35,12 @@ public class MethodsChosen implements Cloneable{
 		
 	}
 	
+	public MethodDeclaration getMethodDeclaration() {
+		return method;
+	}
+	
 	public IMethod getMethod() {
-		return method.getMethod();
+		return (IMethod) method.resolveBinding().getJavaElement();
 	}
 
 	public IVariableBinding getTargetChosen() {
@@ -48,11 +48,11 @@ public class MethodsChosen implements Cloneable{
 	}
 	
 	public IPackageFragment getpackageOriginal(){
-		return method.getPackageName();
+		return getMethod().getDeclaringType().getPackageFragment();
 	}
 	
 	public IType getClassOriginal(){
-		return method.getClassName();
+		return getMethod().getDeclaringType();
 	}
 	
 	public double[] getMetrics() {
@@ -60,33 +60,31 @@ public class MethodsChosen implements Cloneable{
 	}
 	
 	public double calculePercentage(double[] metricsOriginal){
-		double mediaMetricsOriginal = (metricsOriginal[0]+
+		double sumMetricsOriginal = (metricsOriginal[0]+
 										metricsOriginal[1]+
 										metricsOriginal[2]+
 										metricsOriginal[3]+
 										metricsOriginal[4]+
-										metricsOriginal[5])/6;
+										metricsOriginal[5]);
 		
-		double mediaNewMetrics = (metrics[0]+
+		double sumNewMetrics = (metrics[0]+
 									metrics[1]+
 									metrics[2]+
 									metrics[3]+
 									metrics[4]+
-									metrics[5])/6;
+									metrics[5]);
 		
-		double percentageIncrease = ((mediaNewMetrics - mediaMetricsOriginal) / mediaMetricsOriginal)*100;
+		double percentageIncrease = ((sumNewMetrics - sumMetricsOriginal) / Math.abs(sumMetricsOriginal))*100;
 		
 		return percentageIncrease;
 		
 	}
 	
 	public double getSumMetrics(double[] metricsOriginal){
-		//Calibracao Relativa 5
-		double increaseCISActual = ((metrics[11]-metricsOriginal[11])/Math.abs(metricsOriginal[11]))*100;
-		double increaseCAMActual = ((metrics[14]-metricsOriginal[14])/Math.abs(metricsOriginal[14]))*100;
-		double increaseDCCActual = ((metricsOriginal[15]-metrics[15])/Math.abs(metrics[15]))*100;
-		double increaseActual = increaseCISActual+increaseCAMActual+increaseDCCActual;
-		return increaseActual;
+		//Calibracao Relativa 3
+		double sumMetricsOriginal = metricsOriginal[0]+metricsOriginal[1]+metricsOriginal[2]+metricsOriginal[3]+metricsOriginal[4]+metricsOriginal[5];
+		double sumMetrics = metrics[0]+metrics[1]+metrics[2]+metrics[3]+metrics[4]+metrics[5];
+		return ((sumMetrics-sumMetricsOriginal)/Math.abs(sumMetricsOriginal))*100;
 		
 	}
 	
@@ -96,24 +94,13 @@ public class MethodsChosen implements Cloneable{
 			MoveInstanceMethodProcessor processor2 = null;
 			while(processor2 == null){
 					
-					processor2 = new MoveInstanceMethodProcessor(method.getMethod(),
-					JavaPreferencesSettings.getCodeGenerationSettings(method.getMethod().getJavaProject()));
+					processor2 = new MoveInstanceMethodProcessor(getMethod(),
+					JavaPreferencesSettings.getCodeGenerationSettings(getMethod().getJavaProject()));
 			}
 			
 			processor2.checkInitialConditions(new NullProgressMonitor());
 			
-			//IVariableBinding[] potential = processor2.getPossibleTargets();
-			
-			IVariableBinding candidate = targetChosen;
-			
-			/*for(int j=0; j<potential.length; j++){
-				if(targetChosen.toString().compareTo(potential[j].toString()) == 0 || targetChosen.equals(potential[j])){
-					candidate = potential[j];
-					break;
-				}
-			}*/
-			
-			processor2.setTarget(candidate);
+			processor2.setTarget(targetChosen);
 			processor2.setInlineDelegator(true);
 			processor2.setRemoveDelegator(true);
 			processor2.setDeprecateDelegates(false);
@@ -121,9 +108,6 @@ public class MethodsChosen implements Cloneable{
 			Refactoring refactoring2 = new MoveRefactoring(processor2);
 			refactoring2.checkInitialConditions(new NullProgressMonitor());
 			
-			/*RefactoringStatus status2 = refactoring2.checkAllConditions(new NullProgressMonitor());
-			if (status2.getSeverity() != RefactoringStatus.OK) return;
-			 */
 			
 			final CreateChangeOperation create2 = new CreateChangeOperation(
 						new CheckConditionsOperation(refactoring2,
@@ -134,9 +118,7 @@ public class MethodsChosen implements Cloneable{
 			
 			ResourcesPlugin.getWorkspace().run(perform2, new NullProgressMonitor());
 			
-			/*IWorkspace workspace2 = ResourcesPlugin.getWorkspace();
-			workspace2.run(perform2, new NullProgressMonitor());*/
-		
+			
 		} catch(NullPointerException n){
 			System.out.println(n.getMessage());
 		}
@@ -146,10 +128,8 @@ public class MethodsChosen implements Cloneable{
 	
 	
 	@Override
-    public MethodsChosen clone() throws CloneNotSupportedException {
-        return (MethodsChosen) super.clone();
+    public Candidate clone() throws CloneNotSupportedException {
+        return (Candidate) super.clone();
     }
 	
 }
-
-

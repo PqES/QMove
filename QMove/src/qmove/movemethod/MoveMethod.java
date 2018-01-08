@@ -1,27 +1,17 @@
 package qmove.movemethod;
 
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
-import org.eclipse.core.commands.ExecutionEvent;
-import org.eclipse.core.resources.IWorkspace;
-import org.eclipse.core.resources.IncrementalProjectBuilder;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
-import org.eclipse.core.runtime.IProgressMonitor;
-import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.OperationCanceledException;
-import org.eclipse.core.runtime.Status;
-import org.eclipse.core.runtime.jobs.Job;
-import org.eclipse.jdt.core.IJavaElement;
-import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IMethod;
-import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.IVariableBinding;
+import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.internal.corext.refactoring.structure.MoveInstanceMethodProcessor;
 import org.eclipse.jdt.internal.ui.preferences.JavaPreferencesSettings;
-import org.eclipse.jface.viewers.TreeSelection;
 import org.eclipse.ltk.core.refactoring.Change;
 import org.eclipse.ltk.core.refactoring.CheckConditionsOperation;
 import org.eclipse.ltk.core.refactoring.CreateChangeOperation;
@@ -29,49 +19,46 @@ import org.eclipse.ltk.core.refactoring.PerformChangeOperation;
 import org.eclipse.ltk.core.refactoring.Refactoring;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 import org.eclipse.ltk.core.refactoring.participants.MoveRefactoring;
-import org.eclipse.ui.handlers.HandlerUtil;
-
-import net.sourceforge.metrics.builder.MetricsBuilder;
-import net.sourceforge.metrics.core.Metric;
 import net.sourceforge.metrics.core.sources.AbstractMetricSource;
 import net.sourceforge.metrics.core.sources.Dispatcher;
-import net.sourceforge.metrics.ui.MetricsView;
-import qmove.core.QMoveHandler;
 import qmove.utils.SingletonNullProgressMonitor;
-import qmove.utils.qMooveUtils;
+import qmove.utils.CSVUtils;
+import qmove.utils.MetricsUtils;
 
 @SuppressWarnings("restriction")
 public class MoveMethod {
 
-	private ArrayList<MethodMetric> potentialFiltred = new ArrayList<MethodMetric>();
-	private MethodMetric candidateChosen;
+	private Map<IVariableBinding, double[]> potentials = new HashMap<IVariableBinding, double[]>();
 	private double[] metricsOriginal;
-	private IJavaElement je;
-	public static double[] metricsModified;
+	private double[] metricsModified;
+	private AbstractMetricSource ms;
+	private IVariableBinding targetChosen;
+	private double[] newMetrics;
 
-	public MoveMethod(IJavaElement je) {
-		this.je = je;
+	public MoveMethod(double[] metricsOriginal) {
+		this.metricsOriginal = metricsOriginal;
 
 	}
 
-	public boolean ckeckIfMethodCanBeMoved(ClassMethod method) throws OperationCanceledException, CoreException {
+	public boolean ckeckIfMethodCanBeMoved(IMethod method) throws OperationCanceledException, CoreException {
 
-		MoveInstanceMethodProcessor processor = new MoveInstanceMethodProcessor(method.getMethod(),
-				JavaPreferencesSettings.getCodeGenerationSettings(method.getMethod().getJavaProject()));
+		MoveInstanceMethodProcessor processor = new MoveInstanceMethodProcessor(method,
+				JavaPreferencesSettings.getCodeGenerationSettings(method.getJavaProject()));
 
 		processor.checkInitialConditions(new NullProgressMonitor());
 
 		IVariableBinding[] potential = processor.getPossibleTargets();
 
-		if (potential.length == 0 || potential == null)
+		if (potential.length == 0 || potential == null) {
 			return false;
+		}
 
 		else {
 
 			for (int i = 0; i < potential.length; i++) {
 
-				MoveInstanceMethodProcessor processor2 = new MoveInstanceMethodProcessor(method.getMethod(),
-						JavaPreferencesSettings.getCodeGenerationSettings(method.getMethod().getJavaProject()));
+				MoveInstanceMethodProcessor processor2 = new MoveInstanceMethodProcessor(method,
+						JavaPreferencesSettings.getCodeGenerationSettings(method.getJavaProject()));
 
 				processor2.setTarget(potential[i]);
 				processor2.setInlineDelegator(true);
@@ -79,22 +66,23 @@ public class MoveMethod {
 				processor2.setDeprecateDelegates(false);
 
 				Refactoring refactoring = new MoveRefactoring(processor2);
-				try{
-					
-				
-				RefactoringStatus status = refactoring.checkAllConditions(new NullProgressMonitor());
+				try {
 
-				if (!status.isOK())
-					return false;
+					RefactoringStatus status = refactoring.checkAllConditions(new NullProgressMonitor());
 
-				else {
-					Change undoChange = refactoring.createChange(new NullProgressMonitor());
-					if (undoChange == null)
+					if (!status.isOK()) {
 						return false;
-				}
+					}
 
-				processor2 = null;
-				} catch(IllegalArgumentException e){
+					else {
+						Change undoChange = refactoring.createChange(new NullProgressMonitor());
+						if (undoChange == null) {
+							return false;
+						}
+					}
+
+					processor2 = null;
+				} catch (IllegalArgumentException e) {
 					return false;
 				}
 			}
@@ -104,15 +92,14 @@ public class MoveMethod {
 
 	}
 
-	public MethodsChosen startRefactoring(ClassMethod method, double[] metricsOriginal) {
+	public Candidate startRefactoring(MethodDeclaration method) {
 
-		this.metricsOriginal = metricsOriginal;
-
-		MethodsChosen methodMoved = null;
+		Candidate methodMoved = null;
 
 		try {
-			if (canMove(method.getMethod()))
-				methodMoved = new MethodsChosen(method, candidateChosen.getPotential(), candidateChosen.getMetrics());
+			if (canMove((IMethod) method.resolveBinding().getJavaElement())) {
+				methodMoved = new Candidate(method, targetChosen, newMetrics);
+			}
 		} catch (OperationCanceledException | CoreException | InterruptedException e) {
 			e.printStackTrace();
 		}
@@ -142,8 +129,8 @@ public class MoveMethod {
 			IVariableBinding candidate;
 
 			for (int i = 0; i < potential.length; i++) {
-				
-				if(potential[i].getType().isInterface()){
+
+				if (potential[i].getType().isInterface()) {
 					continue;
 				}
 
@@ -154,8 +141,7 @@ public class MoveMethod {
 
 				candidate = potential[i];
 
-				System.out.println("Calculando refactoring para "
-						+ candidate.getType().getName());
+				System.out.println("Calculando refactoring para " + candidate.getType().getName());
 
 				processor2.setTarget(candidate);
 				processor2.setInlineDelegator(true);
@@ -175,43 +161,36 @@ public class MoveMethod {
 
 				System.out.print("Recalculando metricas... ");
 
-				QMoveHandler.queueIsZero = false;
-				while (QMoveHandler.queueIsZero == false) {
-					Thread.sleep(100);
-				}
+				MetricsUtils.waitForMetricsCalculate();
 
 				System.out.println("Pronto!");
 
-				AbstractMetricSource ms = Dispatcher.getAbstractMetricSource(je);
-				metricsModified = QMoodMetrics.getMetrics(ms);
-				qMooveUtils.writeCsvFile(
+				ms = Dispatcher.getAbstractMetricSource(method.getJavaProject().getPrimaryElement());
+				metricsModified = MetricsUtils.getMetrics(ms);
+
+				CSVUtils.writeCsvFile(
 						method.getCompilationUnit().getParent().getElementName() + "."
 								+ method.getDeclaringType().getElementName() + ":" + method.getElementName() + " / "
 								+ candidate.getType().getPackage().getName() + "." + candidate.getName(),
 						metricsModified);
-				
+
 				Change undoChange = perform.getUndoChange();
-				
+
 				undoChange.perform(SingletonNullProgressMonitor.getNullProgressMonitor());
 
 				System.out.print("Recalculando metricas... ");
 
-				QMoveHandler.queueIsZero = false;
-				while (QMoveHandler.queueIsZero == false) {
-					Thread.sleep(100);
-				}
+				MetricsUtils.waitForMetricsCalculate();
 
 				System.out.println("Pronto!");
 
-
 				if (hadMetricsIncreased()) {
 					System.out.println("Melhoram metricas");
-					potentialFiltred.add(new MethodMetric(potential[i], metricsModified));
+					potentials.put(potential[i], metricsModified);
 					continue;
-				} else{
+				} else {
 					System.out.println("Pioram metricas");
 				}
-
 
 			}
 
@@ -220,7 +199,7 @@ public class MoveMethod {
 		}
 
 		if (choosePotential()) {
-			potentialFiltred.clear();
+			potentials.clear();
 			return true;
 		}
 
@@ -230,44 +209,72 @@ public class MoveMethod {
 	}
 
 	private boolean hadMetricsIncreased() {
-		
-		//Calibracao Relativa 5 (Corrigido)
-		if(((metricsModified[11]-metricsOriginal[11])/Math.abs(metricsOriginal[11]))*100 < 0
-				|| ((metricsModified[14]-metricsOriginal[14])/Math.abs(metricsOriginal[14]))*100 < 0
-				|| ((metricsOriginal[15]-metricsModified[15])/Math.abs(metricsModified[15]))*100 < 0){
-				return false;
-			} else if(((metricsModified[11]-metricsOriginal[11])/Math.abs(metricsOriginal[11]))*100 == 0
-					&& ((metricsModified[14]-metricsOriginal[14])/Math.abs(metricsOriginal[14]))*100 == 0
-					&& ((metricsOriginal[15]-metricsModified[15])/Math.abs(metricsModified[15]))*100 < 0){
-				return false;
-			} else {
-				return true;
+
+		// Calibracao Relativa 3
+		double sumOriginal = 0, sumModified = 0;
+
+		for (int i = 0; i <= 5; i++) {
+			sumOriginal += metricsOriginal[i];
+			sumModified += metricsModified[i];
 		}
+
+		if (((sumModified - sumOriginal) / Math.abs(sumOriginal)) * 100 > 0) {
+			return true;
+		}
+
+		return false;
 	}
 
-	public boolean choosePotential() throws OperationCanceledException, CoreException {
-		
-		if (potentialFiltred.size() == 0 || potentialFiltred == null)
-			return false;
+	public boolean choosePotential() {
 
-		if (potentialFiltred.size() == 1) {
-			candidateChosen = potentialFiltred.get(0);
+		if (potentials.size() == 0 || potentials == null) {
+			return false;
+		}
+
+		if (potentials.size() == 1) {
+			targetChosen = (IVariableBinding) potentials.keySet().toArray()[0];
+			newMetrics = potentials.get(targetChosen);
 			return true;
 		}
 
 		else {
 
-			candidateChosen = potentialFiltred.get(0);
+			targetChosen = (IVariableBinding) potentials.keySet().toArray()[0];
 
-			for (int i = 1; i < potentialFiltred.size(); i++) {
+			for (int i = 1; i < potentials.keySet().toArray().length; i++) {
 
-				if (potentialFiltred.get(i).hasBetterMetricsThan(metricsOriginal, candidateChosen.getMetrics()))
-					candidateChosen = potentialFiltred.get(i);
+				if (hasBetterMetricsThan(potentials.get(targetChosen),
+						potentials.get((IVariableBinding) potentials.keySet().toArray()[i]))) {
+					targetChosen = (IVariableBinding) potentials.keySet().toArray()[i];
+					newMetrics = potentials.get((IVariableBinding) potentials.keySet().toArray()[i]);
+				}
 			}
 
 			return true;
 		}
 
+	}
+
+	public boolean hasBetterMetricsThan(double[] currentBestMetrics, double[] candidateBestMetrics) {
+		// Calibracao Relativa 3
+		double sumMetricsOriginal = currentBestMetrics[0] + currentBestMetrics[1] + currentBestMetrics[2]
+				+ currentBestMetrics[3] + currentBestMetrics[4] + currentBestMetrics[5];
+		double sumMetrics = metricsOriginal[0] + metricsOriginal[1] + metricsOriginal[2] + metricsOriginal[3]
+				+ metricsOriginal[4] + metricsOriginal[5];
+		double sumCandidateMetrics = candidateBestMetrics[0] + candidateBestMetrics[1] + candidateBestMetrics[2]
+				+ candidateBestMetrics[3] + candidateBestMetrics[4] + candidateBestMetrics[5];
+		double percentageActual = ((sumMetrics - sumMetricsOriginal) / Math.abs(sumMetricsOriginal)) * 100;
+		double percentageCandidate = ((sumCandidateMetrics - sumMetricsOriginal) / Math.abs(sumMetricsOriginal)) * 100;
+
+		if (percentageActual > percentageCandidate) {
+			return true;
+		}
+
+		return false;
+	}
+
+	public void setMetricsOriginal(double[] metricsOriginal) {
+		this.metricsOriginal = metricsOriginal;
 	}
 
 }
