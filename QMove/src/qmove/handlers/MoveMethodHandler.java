@@ -237,7 +237,9 @@ public class MoveMethodHandler extends AbstractHandler {
 					if (resource instanceof IFile && resource.getName().endsWith(".java")) {
 						ICompilationUnit unit = ((ICompilationUnit) JavaCore.create((IFile) resource));
 						MethodsVisitor mv = new MethodsVisitor(unit);
-						allMethods.addAll(mv.getMethods());
+						if(mv.getMethods() != null){
+							allMethods.addAll(mv.getMethods());
+						}
 
 					}
 					return true;
