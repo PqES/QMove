@@ -75,7 +75,7 @@ import java.awt.Dimension;
 import javax.swing.JScrollPane;
 
 import qmove.handlers.MoveMethodHandler;
-import qmove.movemethod.Recommendation;
+import qmove.persistences.Recommendation;
 
 
 

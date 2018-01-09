@@ -1,5 +1,6 @@
 package qmove.movemethod;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -9,7 +10,6 @@ import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.dom.IVariableBinding;
-import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.internal.corext.refactoring.structure.MoveInstanceMethodProcessor;
 import org.eclipse.jdt.internal.ui.preferences.JavaPreferencesSettings;
 import org.eclipse.ltk.core.refactoring.Change;
@@ -19,11 +19,14 @@ import org.eclipse.ltk.core.refactoring.PerformChangeOperation;
 import org.eclipse.ltk.core.refactoring.Refactoring;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 import org.eclipse.ltk.core.refactoring.participants.MoveRefactoring;
+
 import net.sourceforge.metrics.core.sources.AbstractMetricSource;
 import net.sourceforge.metrics.core.sources.Dispatcher;
-import qmove.utils.SingletonNullProgressMonitor;
+import qmove.persistences.Candidate;
+import qmove.persistences.MethodTargets;
 import qmove.utils.CSVUtils;
 import qmove.utils.MetricsUtils;
+import qmove.utils.SingletonNullProgressMonitor;
 
 @SuppressWarnings("restriction")
 public class MoveMethod {
@@ -34,71 +37,108 @@ public class MoveMethod {
 	private AbstractMetricSource ms;
 	private IVariableBinding targetChosen;
 	private double[] newMetrics;
+	private MethodTargets methodTargets;
 
 	public MoveMethod(double[] metricsOriginal) {
 		this.metricsOriginal = metricsOriginal;
+		methodTargets = null;
 
 	}
 
-	public boolean ckeckIfMethodCanBeMoved(IMethod method) throws OperationCanceledException, CoreException {
+	public boolean canMethodBeMoved(IMethod method) throws OperationCanceledException, CoreException {
 
-		MoveInstanceMethodProcessor processor = new MoveInstanceMethodProcessor(method,
-				JavaPreferencesSettings.getCodeGenerationSettings(method.getJavaProject()));
+		boolean temUmValido = false;
+		ArrayList<String> validTargets;
 
-		processor.checkInitialConditions(new NullProgressMonitor());
+		try {
+			System.out.println("---------------------------------------------------------------------");
+			System.out.print("Tentando method " + method.getElementName() + "... ");
+			if (method.isConstructor()) {
+				System.out.println("Eh construtor!");
+				return false;
+			}
 
-		IVariableBinding[] potential = processor.getPossibleTargets();
+			MoveInstanceMethodProcessor processor = new MoveInstanceMethodProcessor(method,
+					JavaPreferencesSettings.getCodeGenerationSettings(method.getJavaProject()));
 
-		if (potential.length == 0 || potential == null) {
-			return false;
-		}
+			processor.checkInitialConditions(SingletonNullProgressMonitor.getNullProgressMonitor());
 
-		else {
+			IVariableBinding[] targets = processor.getPossibleTargets();
 
-			for (int i = 0; i < potential.length; i++) {
+			if (targets.length == 0 || targets == null) {
+				System.out.println("Nao da pra mover pra nenhum lugar");
+				return false;
+			}
 
-				MoveInstanceMethodProcessor processor2 = new MoveInstanceMethodProcessor(method,
-						JavaPreferencesSettings.getCodeGenerationSettings(method.getJavaProject()));
+			else {
 
-				processor2.setTarget(potential[i]);
-				processor2.setInlineDelegator(true);
-				processor2.setRemoveDelegator(true);
-				processor2.setDeprecateDelegates(false);
+				validTargets = new ArrayList<String>();
 
-				Refactoring refactoring = new MoveRefactoring(processor2);
-				try {
+				System.out.println();
 
-					RefactoringStatus status = refactoring.checkAllConditions(new NullProgressMonitor());
+				for (int i = 0; i < targets.length; i++) {
 
-					if (!status.isOK()) {
-						return false;
+					IVariableBinding candidate = targets[i];
+					System.out.print("Destino: " + candidate.getType().getName() + ": ");
+
+					if (candidate.getType().isEnum() || candidate.getType().isInterface()) {
+						System.out.println("É enumerado ou interface");
+						continue;
 					}
 
-					else {
-						Change undoChange = refactoring.createChange(new NullProgressMonitor());
-						if (undoChange == null) {
-							return false;
+					processor = new MoveInstanceMethodProcessor(method,
+							JavaPreferencesSettings.getCodeGenerationSettings(method.getJavaProject()));
+
+					processor.checkInitialConditions(SingletonNullProgressMonitor.getNullProgressMonitor());
+
+					processor.setTarget(candidate);
+					processor.setInlineDelegator(true);
+					processor.setRemoveDelegator(true);
+					processor.setDeprecateDelegates(false);
+
+					Refactoring ref = new MoveRefactoring(processor);
+					RefactoringStatus status = null;
+
+					status = ref.checkAllConditions(new NullProgressMonitor());
+
+					if (status.isOK()) {
+
+						System.out.println("OK!");
+
+						if (validTargets.contains(candidate.getType().getQualifiedName())) {
+							System.out.println("Soh que esse destino ja ta salvo entre os destinos possiveis");
+							continue;
+						} else {
+							validTargets.add(candidate.getType().getQualifiedName());
+							temUmValido = true;
 						}
+
+					} else {
+						System.out.println("Falhou");
 					}
 
-					processor2 = null;
-				} catch (IllegalArgumentException e) {
-					return false;
 				}
 			}
+
+			if (temUmValido) {
+				setMethodTargets(new MethodTargets(method, validTargets));
+			}
+
+			return temUmValido;
+
+		} catch (Exception e) {
+			return false;
 		}
-
-		return true;
-
 	}
 
-	public Candidate startRefactoring(MethodDeclaration method) {
+	public Candidate doRefactoringProcess(MethodTargets methodTargets) {
 
 		Candidate methodMoved = null;
 
 		try {
-			if (canMove((IMethod) method.resolveBinding().getJavaElement())) {
-				methodMoved = new Candidate(method, targetChosen, newMetrics);
+			System.out.println("-----------Metodo: " + methodTargets.getMethod().getElementName() + "----------------");
+			if (improvedMetrics(methodTargets)) {
+				methodMoved = new Candidate(methodTargets, targetChosen, newMetrics);
 			}
 		} catch (OperationCanceledException | CoreException | InterruptedException e) {
 			e.printStackTrace();
@@ -107,48 +147,51 @@ public class MoveMethod {
 		return methodMoved;
 	}
 
-	public boolean canMove(IMethod method) throws OperationCanceledException, CoreException, InterruptedException {
+	public boolean improvedMetrics(MethodTargets methodTargets)
+			throws OperationCanceledException, CoreException, InterruptedException {
 
 		try {
 			MoveInstanceMethodProcessor processor = null;
 
 			while (processor == null) {
-				processor = new MoveInstanceMethodProcessor(method,
-						JavaPreferencesSettings.getCodeGenerationSettings(method.getJavaProject()));
+				processor = new MoveInstanceMethodProcessor(methodTargets.getMethod(),
+						JavaPreferencesSettings.getCodeGenerationSettings(methodTargets.getMethod().getJavaProject()));
 			}
 
 			processor.checkInitialConditions(new NullProgressMonitor());
 
-			IVariableBinding[] potential = processor.getPossibleTargets();
+			IVariableBinding[] targets = processor.getPossibleTargets();
+			
+			// Array que ira armazenar os targets ja encontrados para o metodo
+			ArrayList<IVariableBinding> arrayTargets = new ArrayList<IVariableBinding>();
 
-			if (potential.length == 0 || potential == null)
-				return false;
 
-			System.out.println("-----------Metodo: " + method.getElementName() + "----------------");
-
-			IVariableBinding candidate;
-
-			for (int i = 0; i < potential.length; i++) {
-
-				if (potential[i].getType().isInterface()) {
-					continue;
+			// laco que popula a arrayTargets
+			for (IVariableBinding target : targets) {
+				for (String targetDetected : methodTargets.getTargets()) {
+					if (targetDetected.compareTo(target.getType().getQualifiedName()) == 0) {
+						arrayTargets.add(target);
+					}
 				}
+			}
 
-				MoveInstanceMethodProcessor processor2 = new MoveInstanceMethodProcessor(method,
-						JavaPreferencesSettings.getCodeGenerationSettings(method.getJavaProject()));
+			for (IVariableBinding candidate : arrayTargets) {
 
-				processor2.checkInitialConditions(new NullProgressMonitor());
 
-				candidate = potential[i];
+				processor = new MoveInstanceMethodProcessor(methodTargets.getMethod(),
+						JavaPreferencesSettings.getCodeGenerationSettings(methodTargets.getMethod().getJavaProject()));
 
-				System.out.println("Calculando refactoring para " + candidate.getType().getName());
+				processor.checkInitialConditions(new NullProgressMonitor());
 
-				processor2.setTarget(candidate);
-				processor2.setInlineDelegator(true);
-				processor2.setRemoveDelegator(true);
-				processor2.setDeprecateDelegates(false);
 
-				Refactoring refactoring = new MoveRefactoring(processor2);
+				System.out.println("Movendo para " + candidate.getType().getName());
+
+				processor.setTarget(candidate);
+				processor.setInlineDelegator(true);
+				processor.setRemoveDelegator(true);
+				processor.setDeprecateDelegates(false);
+
+				Refactoring refactoring = new MoveRefactoring(processor);
 				refactoring.checkInitialConditions(new NullProgressMonitor());
 
 				final CreateChangeOperation create = new CreateChangeOperation(
@@ -165,12 +208,12 @@ public class MoveMethod {
 
 				System.out.println("Pronto!");
 
-				ms = Dispatcher.getAbstractMetricSource(method.getJavaProject().getPrimaryElement());
+				ms = Dispatcher.getAbstractMetricSource(methodTargets.getMethod().getJavaProject().getPrimaryElement());
 				metricsModified = MetricsUtils.getMetrics(ms);
 
 				CSVUtils.writeCsvFile(
-						method.getCompilationUnit().getParent().getElementName() + "."
-								+ method.getDeclaringType().getElementName() + ":" + method.getElementName() + " / "
+						methodTargets.getMethod().getCompilationUnit().getParent().getElementName() + "."
+								+ methodTargets.getMethod().getDeclaringType().getElementName() + ":" + methodTargets.getMethod().getElementName() + " / "
 								+ candidate.getType().getPackage().getName() + "." + candidate.getName(),
 						metricsModified);
 
@@ -186,7 +229,7 @@ public class MoveMethod {
 
 				if (hadMetricsIncreased()) {
 					System.out.println("Melhoram metricas");
-					potentials.put(potential[i], metricsModified);
+					potentials.put(candidate, metricsModified);
 					continue;
 				} else {
 					System.out.println("Pioram metricas");
@@ -198,7 +241,7 @@ public class MoveMethod {
 			System.out.println(n.getMessage());
 		}
 
-		if (choosePotential()) {
+		if (foundBestTarget()) {
 			potentials.clear();
 			return true;
 		}
@@ -225,7 +268,7 @@ public class MoveMethod {
 		return false;
 	}
 
-	public boolean choosePotential() {
+	public boolean foundBestTarget() {
 
 		if (potentials.size() == 0 || potentials == null) {
 			return false;
@@ -275,6 +318,14 @@ public class MoveMethod {
 
 	public void setMetricsOriginal(double[] metricsOriginal) {
 		this.metricsOriginal = metricsOriginal;
+	}
+
+	public MethodTargets getMethodTargets() {
+		return methodTargets;
+	}
+
+	public void setMethodTargets(MethodTargets methodTargets) {
+		this.methodTargets = methodTargets;
 	}
 
 }

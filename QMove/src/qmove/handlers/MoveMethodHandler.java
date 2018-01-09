@@ -37,10 +37,11 @@ import org.eclipse.ui.handlers.HandlerUtil;
 import net.sourceforge.metrics.core.sources.AbstractMetricSource;
 import net.sourceforge.metrics.core.sources.Dispatcher;
 import qmove.ast.MethodsVisitor;
-import qmove.movemethod.Candidate;
-import qmove.movemethod.MethodsTable;
 import qmove.movemethod.MoveMethod;
-import qmove.movemethod.Recommendation;
+import qmove.persistences.Candidate;
+import qmove.persistences.MethodTargets;
+import qmove.persistences.MethodsTable;
+import qmove.persistences.Recommendation;
 import qmove.utils.CSVUtils;
 import qmove.utils.MetricsUtils;
 import qmove.utils.SingletonNullProgressMonitor;
@@ -50,6 +51,7 @@ public class MoveMethodHandler extends AbstractHandler {
 
 	public static ArrayList<Recommendation> listRecommendations = new ArrayList<Recommendation>();
 	public static IProject iProject = null;
+	private ArrayList<MethodTargets> potRefactor;
 	private Map<String, double[]> methodsTable = new HashMap<String, double[]>();
 	private IJavaProject projectCopy;
 	private double[] metricsOriginal;
@@ -85,28 +87,31 @@ public class MoveMethodHandler extends AbstractHandler {
 
 			CSVUtils.initializeCsvFile();
 
-			MoveMethod checkMove = new MoveMethod(metricsOriginal);
+			MoveMethod mm = new MoveMethod(metricsOriginal);
+			potRefactor = new ArrayList<MethodTargets>();
 
-			System.out.print("Verificando metodos que podem ser movidos: ");
+			System.out.println("Verificando metodos que podem ser movidos: ");
 			for (Iterator<MethodDeclaration> i = allMethods.iterator(); i.hasNext();) {
 				MethodDeclaration md = i.next();
-				if (!checkMove.ckeckIfMethodCanBeMoved((IMethod) md.resolveBinding().getJavaElement())) {
-					i.remove();
+				if (mm.canMethodBeMoved((IMethod) md.resolveBinding().getJavaElement())) {
+					potRefactor.add(mm.getMethodTargets());
 				}
+				i.remove();
 			}
 
+			mm.setMethodTargets(null);
 			Candidate aux;
 			int qmoveID = 0;
 
-			System.out.println(allMethods.size());
+			System.out.println("Quantidade de metodos que podem ser movidos: "+potRefactor.size());
 
-			while (allMethods.size() > 0) {
+			while (potRefactor.size() > 0) {
 
 				CSVUtils.writeCsvFile("Current", metricsOriginal);
 
-				for (int i = 0; i < allMethods.size(); i++) {
-					System.out.println("Metodo " + (i + 1) + " de " + allMethods.size());
-					aux = checkMove.startRefactoring(allMethods.get(i));
+				for (int i = 0; i < potRefactor.size(); i++) {
+					System.out.println("Metodo " + (i + 1) + " de " + potRefactor.size());
+					aux = mm.doRefactoringProcess(potRefactor.get(i));
 					if (aux != null){
 						if(bestMethod==null){
 							bestMethod = aux;
@@ -121,7 +126,7 @@ public class MoveMethodHandler extends AbstractHandler {
 				}
 
 				if (bestMethod == null) {
-					allMethods.clear();
+					potRefactor.clear();
 					continue;
 				}
 				
@@ -143,9 +148,9 @@ public class MoveMethodHandler extends AbstractHandler {
 				bestMethod.move();
 				
 				metricsOriginal = bestMethod.getMetrics();
-				checkMove.setMetricsOriginal(metricsOriginal);
+				mm.setMetricsOriginal(metricsOriginal);
 
-				allMethods.remove(bestMethod.getMethodDeclaration());
+				potRefactor.remove(bestMethod.getMethodDeclaration());
 
 				bestMethod = null;
 

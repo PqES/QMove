@@ -1,4 +1,4 @@
-package qmove.movemethod;
+package qmove.persistences;
 
 import java.io.Serializable;
 import java.util.HashMap;

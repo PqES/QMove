@@ -1,4 +1,4 @@
-package qmove.movemethod;
+package qmove.persistences;
 
 
 import org.eclipse.core.resources.ResourcesPlugin;
@@ -9,7 +9,6 @@ import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.dom.IVariableBinding;
-import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.internal.corext.refactoring.structure.MoveInstanceMethodProcessor;
 import org.eclipse.jdt.internal.ui.preferences.JavaPreferencesSettings;
 import org.eclipse.ltk.core.refactoring.CheckConditionsOperation;
@@ -22,25 +21,25 @@ import org.eclipse.ltk.core.refactoring.participants.MoveRefactoring;
 @SuppressWarnings("restriction")
 public class Candidate implements Cloneable{
 	
-	private MethodDeclaration method;
+	private MethodTargets methodTargets;
 	private IVariableBinding targetChosen;
 	private double[] metrics;
 	
 
-	public Candidate(MethodDeclaration method, IVariableBinding targetChosen, double[] metrics){
+	public Candidate(MethodTargets method, IVariableBinding targetChosen, double[] metrics){
 		
-		this.method = method;
+		this.methodTargets = method;
 		this.targetChosen = targetChosen;
 		this.metrics = metrics;
 		
 	}
 	
-	public MethodDeclaration getMethodDeclaration() {
-		return method;
+	public MethodTargets getMethodDeclaration() {
+		return methodTargets;
 	}
 	
 	public IMethod getMethod() {
-		return (IMethod) method.resolveBinding().getJavaElement();
+		return methodTargets.getMethod();
 	}
 
 	public IVariableBinding getTargetChosen() {

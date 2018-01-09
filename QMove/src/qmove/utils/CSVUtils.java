@@ -38,39 +38,6 @@ public class CSVUtils {
 			fileWriter.append("UND");
 			fileWriter.append(COMMA_DELIMITER);
 			
-			fileWriter.append("NOM");
-			fileWriter.append(COMMA_DELIMITER);
-			
-			fileWriter.append("NOP");
-			fileWriter.append(COMMA_DELIMITER);
-			
-			fileWriter.append("DSC");
-			fileWriter.append(COMMA_DELIMITER);
-			
-			fileWriter.append("ANA");
-			fileWriter.append(COMMA_DELIMITER);
-			
-			fileWriter.append("MFA");
-			fileWriter.append(COMMA_DELIMITER);
-			
-			fileWriter.append("CIS");
-			fileWriter.append(COMMA_DELIMITER);
-			
-			fileWriter.append("MOA");
-			fileWriter.append(COMMA_DELIMITER);
-			
-			fileWriter.append("DAM");
-			fileWriter.append(COMMA_DELIMITER);
-			
-			fileWriter.append("CAM");
-			fileWriter.append(COMMA_DELIMITER);
-			
-			fileWriter.append("DCC");
-			fileWriter.append(COMMA_DELIMITER);
-			
-			fileWriter.append("NOH");
-			fileWriter.append(COMMA_DELIMITER);
-			
 			fileWriter.append("SUM");
 			fileWriter.append(COMMA_DELIMITER);
 			
