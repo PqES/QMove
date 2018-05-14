@@ -18,39 +18,6 @@ public class FileUtils {
 	private static final String SPECIAL_SEPARATOR = "@";
 	private static final String NEW_LINE_SEPARATOR = "\n";
 
-	public static void writeValidMoveMethod(String method, String target, double increase) {
-
-		FileWriter fileWriter = null;
-
-		try {
-			fileWriter = new FileWriter(System.getProperty("user.dir") + "/refactorings.csv", true);
-
-			fileWriter.append(method);
-			fileWriter.append(COMMA_DELIMITER);
-
-			fileWriter.append(target);
-			fileWriter.append(COMMA_DELIMITER);
-
-			fileWriter.append(Double.toString(increase));
-
-			fileWriter.append(NEW_LINE_SEPARATOR);
-
-		} catch (Exception e) {
-			System.out.println("Error in CsvFileWriter !!!");
-			e.printStackTrace();
-		} finally {
-
-			try {
-				fileWriter.flush();
-				fileWriter.close();
-			} catch (IOException e) {
-				System.out.println("Error while flushing/closing fileWriter !!!");
-				e.printStackTrace();
-			}
-
-		}
-	}
-
 	public static void writeBetterMethod(String method, String target, double increase, double[] newMetrics) {
 
 		FileWriter fileWriter = null;

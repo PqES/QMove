@@ -17,6 +17,8 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IMethod;
+import org.eclipse.jdt.core.IPackageFragment;
+import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
@@ -68,7 +70,7 @@ public class QMoveHanlder extends AbstractHandler {
 
 			// get all classes and methods from project
 			System.out.print("Getting project classes and methods...... ");
-			getAllClassesAndMethods(projectCopy.getProject());
+			getAllClassesAndMethods(projectCopy);
 			System.out.println("OK!");
 
 			// calculate all current metrics
@@ -166,28 +168,53 @@ public class QMoveHanlder extends AbstractHandler {
 		System.out.println(" UND = " + qmood.getUnd());
 	}
 
-	private void getAllClassesAndMethods(final IProject projectCopy) throws CoreException {
+	private void getAllClassesAndMethods(final IJavaProject jprojectCopy) throws CoreException {
 
-		projectCopy.accept(new IResourceVisitor() {
+		try {
+			jprojectCopy.getProject().accept(new IResourceVisitor() {
 
-			@Override
-			public boolean visit(IResource resource) throws JavaModelException {
-				if (resource instanceof IFile && resource.getName().endsWith(".java")) {
-					ICompilationUnit unit = ((ICompilationUnit) JavaCore.create((IFile) resource));
+				@Override
+				public boolean visit(IResource resource) throws JavaModelException {
+					if (resource instanceof IFile && resource.getName().endsWith(".java")) {
+						ICompilationUnit unit = ((ICompilationUnit) JavaCore.create((IFile) resource));
 
-					ClassMethodVisitor cmv = new ClassMethodVisitor(unit);
-					if (cmv.getArrayTypes() != null) {
-						allTypes.addAll(cmv.getArrayTypes());
+						ClassMethodVisitor cmv = new ClassMethodVisitor(unit);
+						if (cmv.getArrayTypes() != null) {
+							allTypes.addAll(cmv.getArrayTypes());
+						}
+
+						if (cmv.getArrayMethod() != null) {
+							allMethods.addAll(cmv.getArrayMethod());
+						}
+
 					}
-
-					if (cmv.getArrayMethod() != null) {
-						allMethods.addAll(cmv.getArrayMethod());
-					}
-
+					return true;
 				}
-				return true;
+			});
+
+		}
+
+		// another way to read class and methods if the first one don't work
+		catch (NullPointerException e) {
+			IPackageFragment[] packages = jprojectCopy.getPackageFragments();
+			for (IPackageFragment mypackage : packages) {
+				if (mypackage.getKind() == IPackageFragmentRoot.K_SOURCE) {
+					for (ICompilationUnit unit : mypackage.getCompilationUnits()) {
+						IType[] types = unit.getTypes();
+						for (int i = 0; i < types.length; i++) {
+							IType type = types[i];
+							allTypes.add(type);
+							IMethod[] imethods = type.getMethods();
+							for (int j = 0; j < imethods.length; j++) {
+								if (!imethods[j].getDeclaringType().isAnonymous()) {
+									allMethods.add(imethods[j]);
+								}
+							}
+						}
+					}
+				}
 			}
-		});
+		}
 	}
 
 	private IJavaProject getProjectFromWorkspace(ExecutionEvent event) {

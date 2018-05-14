@@ -25,10 +25,15 @@ public class DirectClassCoupling {
 			for (FieldDeclaration field : fields) {
 				tipos.addAll(getSourceTypeNames(field.getType().resolveBinding()));
 			}
-			for (MethodDeclaration method : methods) {
-				for (ITypeBinding binding : method.resolveBinding().getParameterTypes()) {
-					tipos.addAll(getSourceTypeNames(binding));
+			try{
+				for (MethodDeclaration method : methods) {
+					for (ITypeBinding binding : method.resolveBinding().getParameterTypes()) {
+						tipos.addAll(getSourceTypeNames(binding));
+					}
 				}
+			} catch(NullPointerException e){
+				dcc = tipos.size();
+				return dcc;
 			}
 		}
 
@@ -47,8 +52,10 @@ public class DirectClassCoupling {
 	private static CompilationUnit getAST(IType type) {
 		try {
 			ASTParser parser = ASTParser.newParser(AST.JLS8);
-			parser.setSource(type.getCompilationUnit());
+			parser.setKind(ASTParser.K_COMPILATION_UNIT);
 			parser.setResolveBindings(true);
+			parser.setBindingsRecovery(true);
+			parser.setSource(type.getCompilationUnit());
 			return (CompilationUnit) parser.createAST(null);
 		} catch (RuntimeException e) {
 			return null;
