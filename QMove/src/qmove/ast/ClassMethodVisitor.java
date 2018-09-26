@@ -11,6 +11,7 @@ import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 
@@ -36,7 +37,9 @@ public class ClassMethodVisitor extends ASTVisitor {
 	@Override
 	public boolean visit(TypeDeclaration node) {
 
-		IType itype = (IType) node.resolveBinding().getJavaElement();
+		//IType itype = (IType) node.resolveBinding().getJavaElement();
+		ITypeBinding itypeb = node.resolveBinding();
+		IType itype = (IType) itypeb.getJavaElement();
 		if (arrayType == null) {
 			arrayType = new ArrayList<IType>();
 		}
