@@ -60,7 +60,7 @@ public class Recommendation {
 	public String[][] getMethodsMetrics() {
 
 		int rows = listBetterMethods.size() + 1;
-		double media = 0, aux = 0;
+		double improvement = 0, aux = 0;
 		String s[][] = new String[rows][8];
 		String sAux[] = getCurrentMetrics();
 		s[0][0] = "Current";
@@ -68,10 +68,12 @@ public class Recommendation {
 			s[0][i] = sAux[i];
 		}
 
-		s[0][7] = String.format("%.5f", calculeMediaCurrent());
+		s[0][7] = "--------------";
 
 		int i = 1;
 		for (BetterMethods bm : listBetterMethods) {
+			
+			improvement = 0;
 
 			s[i][0] = "[" + bm.getMethod() + ", " + bm.getTarget() + "]";
 
@@ -86,15 +88,16 @@ public class Recommendation {
 				else if (aux == 0)
 					s[i][j] = "";
 
-				media += bm.getNewMetrics()[j - 1];
+				improvement += bm.getNewMetrics()[j - 1];
 			}
 
-			media = (media / 6) - calculeMediaCurrent();
-			if (media < 0)
-				s[i][7] = String.format("%.5f", aux);
-			else if (media > 0)
-				s[i][7] = String.format("+%.5f", aux);
-			else if (media == 0)
+			//improvement = (improvement / 6) - calculeSumCurrent();
+			improvement = (( improvement - calculeSumCurrent() ) / Math.abs(calculeSumCurrent()) )*100; 
+			if (improvement < 0)
+				s[i][7] = String.format("-%.5f", improvement)+"%";
+			else if (improvement > 0)
+				s[i][7] = String.format("+%.2f", improvement)+"%";
+			else if (improvement == 0)
 				s[i][7] = "0";
 			i++;
 		}
@@ -111,16 +114,15 @@ public class Recommendation {
 		s[4] = String.format("%.5f", oldMetrics[3]);
 		s[5] = String.format("%.5f", oldMetrics[4]);
 		s[6] = String.format("%.5f", oldMetrics[5]);
-		double media = calculeMediaCurrent();
+		double media = calculeSumCurrent();
 		s[7] = String.format("%.5f", media);
 
 		return s;
 	}
 
-	private double calculeMediaCurrent() {
-		double media = (oldMetrics[0] + oldMetrics[1] + oldMetrics[2] + oldMetrics[3] + oldMetrics[4] + oldMetrics[5])
-				/ 6;
-		return media;
+	private double calculeSumCurrent() {
+		double sum = (oldMetrics[0] + oldMetrics[1] + oldMetrics[2] + oldMetrics[3] + oldMetrics[4] + oldMetrics[5]);
+		return sum;
 
 	}
 

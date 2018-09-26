@@ -291,7 +291,7 @@ class GuiPrincipal extends JFrame {
 	private static final long serialVersionUID = 1L;
 	// variaveis para uso da JTable
 	private JTable table;
-	private final String colunas[] = { "Method/Target", "REU", "FLE", "EFE", "EXT", "FUN", "ENT", "Average" };
+	private final String colunas[] = { "Method/Target", "EFE", "EXT", "FLE", "FUN", "REU", "UND", "Increase" };
 	private String dados[][];
 
 	/*
@@ -306,7 +306,7 @@ class GuiPrincipal extends JFrame {
 			}
 		}
 		setLayout(new FlowLayout());// tipo de layout
-		setSize(new Dimension(600, 200));// tamanho do Formulario
+		setSize(new Dimension(600, 400));// tamanho do Formulario
 		setLocationRelativeTo(null);// centralizado
 		setTitle("More Info");// titulo
 		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);// setando a ação
@@ -318,7 +318,7 @@ class GuiPrincipal extends JFrame {
 
 		// instanciando a JTable
 		table = new JTable(dados, colunas);
-		table.setPreferredScrollableViewportSize(new Dimension(500, 100));// barra
+		table.setPreferredScrollableViewportSize(new Dimension(500, 200));// barra
 																			// de
 																			// rolagem
 		table.setFillsViewportHeight(true);

@@ -91,7 +91,7 @@ public class QMoveHanlder extends AbstractHandler {
 			mtAux = null;
 
 			// variable for the recommendations id
-			int count = 0;
+			int count = 0, countID;
 
 			// find best move method refactoring sequence
 			while (!allPossibleRefactorings.isEmpty()) {
@@ -103,8 +103,12 @@ public class QMoveHanlder extends AbstractHandler {
 
 				// set current metrics
 				mmc.setMetrics(qmood.getQMOODAttributes());
-
+				
+				countID=0;
 				for (MethodTargets mt : allPossibleRefactorings) {
+					countID++;
+					System.out.println("---------------------------------------------------");
+					System.out.println("Method "+countID+" of "+allPossibleRefactorings.size());
 					actualRefactoring = mmc.refactorAndCalculateMetrics(mt);
 					if (actualRefactoring != null) {
 

@@ -7,6 +7,8 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 
 import qmove.persistence.BetterMethods;
 import qmove.persistence.Recommendation;
@@ -179,7 +181,7 @@ public class FileUtils {
 		}
 	}
 
-	@SuppressWarnings("resource")
+	@SuppressWarnings({"unchecked", "rawtypes" })
 	private static ArrayList<BetterMethods> readBetterMethodsFile() {
 		ArrayList<BetterMethods> listBetterMethods = null;
 		try {
@@ -202,8 +204,18 @@ public class FileUtils {
 								Double.parseDouble(array[7]), Double.parseDouble(array[8]) }));
 
 			}
-
+			
+			b.close();
 			f.delete();
+			
+			Collections.sort (listBetterMethods, new Comparator() {
+	            public int compare(Object o1, Object o2) {
+	            	BetterMethods m1 = (BetterMethods) o1;
+	            	BetterMethods m2 = (BetterMethods) o2;
+	                return m1.getIncrease() > m2.getIncrease() ? -1 : (m1.getIncrease() < m2.getIncrease() ? +1 : 0);
+	            }
+	        });
+		
 
 			return listBetterMethods;
 
@@ -216,7 +228,7 @@ public class FileUtils {
 		}
 	}
 
-	@SuppressWarnings("resource")
+	
 	public static ArrayList<Recommendation> readRecommendationsFile() {
 		ArrayList<Recommendation> recommendations = null;
 		try {
@@ -274,8 +286,11 @@ public class FileUtils {
 						Double.parseDouble(array[15]), listBetterMethods));
 
 			}
+			
+			b.close();
 
 			f.delete();
+			
 
 			return recommendations;
 
