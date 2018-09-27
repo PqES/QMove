@@ -16,7 +16,7 @@ import org.eclipse.ltk.core.refactoring.Refactoring;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 import org.eclipse.ltk.core.refactoring.participants.MoveRefactoring;
 
-import qmove.handlers.QMoveHanlder;
+import qmove.handlers.QMoveHandler;
 import qmove.persistence.MethodTargets;
 
 @SuppressWarnings("restriction")
@@ -262,7 +262,7 @@ public class MoveMethodUtils {
 
 		try {
 
-			IMethod[] methods = QMoveHanlder.projectOriginal.findType(method.substring(0, method.lastIndexOf("::")),
+			IMethod[] methods = QMoveHandler.projectOriginal.findType(method.substring(0, method.lastIndexOf("::")),
 					SingletonNullProgressMonitor.getNullProgressMonitor()).getMethods();
 
 			for (IMethod imethod : methods) {

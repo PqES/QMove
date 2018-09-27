@@ -87,13 +87,13 @@ public class FileUtils {
 			fileWriter.append(COMMA_DELIMITER);
 
 			// write old metrics on file
-			for (int i = 0; i < oldMetrics.length; i++) {
+			for (int i = 0; i < oldMetrics.length-3; i++) {
 				fileWriter.append(Double.toString(oldMetrics[i]));
 				fileWriter.append(COMMA_DELIMITER);
 			}
 
 			// write new metrics on file
-			for (int i = 0; i < newMetrics.length; i++) {
+			for (int i = 0; i < newMetrics.length-3; i++) {
 				fileWriter.append(Double.toString(newMetrics[i]));
 				fileWriter.append(COMMA_DELIMITER);
 			}

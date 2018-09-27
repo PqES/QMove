@@ -2,6 +2,8 @@ package qmove.handlers;
 
 import java.util.ArrayList;
 
+import javax.swing.JOptionPane;
+
 import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
@@ -39,7 +41,7 @@ import qmove.utils.SingletonNullProgressMonitor;
 import qmove.utils.ViewUtils;
 
 @SuppressWarnings("restriction")
-public class QMoveHanlder extends AbstractHandler {
+public class QMoveHandler extends AbstractHandler {
 
 	private ArrayList<IType> allTypes;
 	private ArrayList<IMethod> allMethods;
@@ -47,21 +49,32 @@ public class QMoveHanlder extends AbstractHandler {
 	public static ArrayList<Recommendation> recommendations;
 	public static IJavaProject projectOriginal;
 	public static IJavaProject projectCopy;
+	public static String calibrationType;
 
 	@Override
 	public Object execute(ExecutionEvent event) throws ExecutionException {
-
+		
 		try {
-
+			
 			allTypes = new ArrayList<IType>();
 			allMethods = new ArrayList<IMethod>();
 			allPossibleRefactorings = new ArrayList<MethodTargets>();
+						
 
 			// hide view if is open
 			ViewUtils.hideView();
 
 			// get selected project from project/package explorer
 			projectOriginal = getProjectFromWorkspace(event);
+			
+			// if null, throw a NullPointerException and stop execution
+			projectOriginal.exists();
+			
+			// choosing a calibration type
+			calibrationType = showCalibrationDialog();
+			
+			// if null, throw a NullPointerException and stop execution
+			calibrationType.isEmpty();
 
 			// clone project
 			System.out.print("Cloning project... ");
@@ -158,6 +171,8 @@ public class QMoveHanlder extends AbstractHandler {
 
 		} catch (CoreException e) {
 			e.printStackTrace();
+		} catch (NullPointerException e){
+			return null;
 		}
 
 		return null;
@@ -265,5 +280,21 @@ public class QMoveHanlder extends AbstractHandler {
 		clone.open(IResource.BACKGROUND_REFRESH, SingletonNullProgressMonitor.getNullProgressMonitor());
 
 		return JavaCore.create(clone);
+	}
+	
+	private String showCalibrationDialog(){
+		
+		Object[] possibilities = {"Abs#1", "Rel#1", "Abs#2", "Rel#2", "Abs#3", "Rel#3", "Abs#4", "Rel#4", "Abs#5", "Rel#5"};
+		
+		
+		String s = (String)JOptionPane.showInputDialog(
+							null,
+		                    "Choose the calibration type you prefer:\n",		                    
+		                    "Choose a Calibration",
+		                    JOptionPane.PLAIN_MESSAGE,
+		                    null,
+		                    possibilities,
+		                    possibilities[5]);
+		return s;
 	}
 }

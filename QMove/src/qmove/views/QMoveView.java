@@ -33,7 +33,7 @@ import org.eclipse.ui.ISharedImages;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.part.ViewPart;
 
-import qmove.handlers.QMoveHanlder;
+import qmove.handlers.QMoveHandler;
 import qmove.persistence.Recommendation;
 import qmove.utils.MoveMethodUtils;
 import qmove.utils.ViewUtils;
@@ -74,7 +74,7 @@ public class QMoveView extends ViewPart {
 
 		// get the content for the viewer, setInput will call getElements in the
 		// contentProvider
-		viewer.setInput(QMoveHanlder.recommendations);
+		viewer.setInput(QMoveHandler.recommendations);
 
 		// make the selection available to other views
 		getSite().setSelectionProvider(viewer);
@@ -152,7 +152,7 @@ public class QMoveView extends ViewPart {
 
 						int id = Integer.parseInt(item.getText(0));
 						Recommendation aux = null;
-						for (Recommendation r : QMoveHanlder.recommendations) {
+						for (Recommendation r : QMoveHandler.recommendations) {
 							if (id == r.getId()) {
 								MoveMethodUtils.moveMethodInOriginalProject(r.getMethod(), r.getParameters(),
 										r.getTarget());
@@ -162,7 +162,7 @@ public class QMoveView extends ViewPart {
 							}
 						}
 
-						QMoveHanlder.recommendations.remove(aux);
+						QMoveHandler.recommendations.remove(aux);
 						ViewUtils.hideView();
 						ViewUtils.openView();
 
@@ -198,7 +198,7 @@ public class QMoveView extends ViewPart {
 				button.addSelectionListener(new SelectionListener() {
 
 					public void widgetSelected(SelectionEvent event) {
-						new GuiPrincipal(item.getText(0), QMoveHanlder.recommendations).setVisible(true);
+						new GuiPrincipal(item.getText(0), QMoveHandler.recommendations).setVisible(true);
 					}
 
 					public void widgetDefaultSelected(SelectionEvent event) {
@@ -265,11 +265,11 @@ public class QMoveView extends ViewPart {
 	private void makeActions() {
 		applyRefactoringAction = new Action() {
 			public void run() {
-				for (Recommendation r : QMoveHanlder.recommendations) {
+				for (Recommendation r : QMoveHandler.recommendations) {
 					MoveMethodUtils.moveMethodInOriginalProject(r.getMethod(), r.getParameters(), r.getTarget());
 				}
 
-				QMoveHanlder.recommendations.clear();
+				QMoveHandler.recommendations.clear();
 				ViewUtils.hideView();
 				ViewUtils.openView();
 			}

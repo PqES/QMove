@@ -7,7 +7,7 @@ import java.util.Map;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
 
-import qmove.handlers.QMoveHanlder;
+import qmove.handlers.QMoveHandler;
 import qmove.metrics.qmood.attributes.Effectiveness;
 import qmove.metrics.qmood.attributes.Extendibility;
 import qmove.metrics.qmood.attributes.Flexibility;
@@ -167,14 +167,14 @@ public class QMOOD {
 
 	private IType getIType(String typeName) {
 		try {
-			return QMoveHanlder.projectCopy.findType(typeName, SingletonNullProgressMonitor.getNullProgressMonitor());
+			return QMoveHandler.projectCopy.findType(typeName, SingletonNullProgressMonitor.getNullProgressMonitor());
 		} catch (JavaModelException e) {
 			return null;
 		}
 	}
 
 	public double[] getQMOODAttributes() {
-		return new double[] { efe, ext, fle, fun, reu, und };
+		return new double[] { efe, ext, fle, fun, reu, und, cis, cam, dcc };
 	}
 
 	public Map<String, Metrics> getAllMetrics() {

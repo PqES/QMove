@@ -3,6 +3,8 @@ package qmove.checker;
 import java.util.ArrayList;
 import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.ltk.core.refactoring.PerformChangeOperation;
+
+import qmove.handlers.QMoveHandler;
 import qmove.metrics.qmood.calculator.QMOOD;
 import qmove.persistence.MethodTargets;
 import qmove.persistence.ValidMove;
@@ -81,19 +83,177 @@ public class MethodMetricsChecker {
 	}
 
 	private boolean hadMetricsIncreased() {
-
-		double sumOriginal = 0, sumModified = 0;
-
-		for (int i = 0; i <= 5; i++) {
-			sumOriginal += currentMetrics[i];
-			sumModified += newMetrics[i];
+		
+		// Absolute Calibration #1
+		if(QMoveHandler.calibrationType.equals("Abs#1")){
+			
+			for(int i=0; i <= 5; i++){
+				if(newMetrics[i] - currentMetrics[i] < 0){
+					return false;
+				}
+			}
+			
+			for(int i=0; i <= 5; i++){
+				if(newMetrics[i] - currentMetrics[i] > 0){
+					return true;
+				}
+			}
+			
 		}
-
-		if (((sumModified - sumOriginal) / Math.abs(sumOriginal)) * 100 > 0) {
-			return true;
+		
+		// Relative Calibration #1
+		else if(QMoveHandler.calibrationType.equals("Rel#1")){
+			
+			for(int i=0; i <= 5; i++){
+				if(((newMetrics[i] - currentMetrics[i])/ Math.abs(currentMetrics[i]))*100 < 0){
+					return false;
+				}
+			}
+			
+			for(int i=0; i <= 5; i++){
+				if(((newMetrics[i] - currentMetrics[i])/ Math.abs(currentMetrics[i]))*100 > 0){
+					return true;
+				}
+			}
+			
 		}
+		
+		//Absolute Calibration #2
+		else if(QMoveHandler.calibrationType.equals("Abs#2")){
+			
+			for(int i=1; i <= 5; i++){
+				if(newMetrics[i] - currentMetrics[i] < 0){
+					return false;
+				}
+			}
+			
+			for(int i=1; i <= 5; i++){
+				if(newMetrics[i] - currentMetrics[i] > 0){
+					return true;
+				}
+			}		
+		}
+			
+		// Relative Calibration #2
+		else if(QMoveHandler.calibrationType.equals("Rel#2")){
+			
+			for(int i=1; i <= 5; i++){
+				if(((newMetrics[i] - currentMetrics[i])/ Math.abs(currentMetrics[i]))*100 < 0){
+					return false;
+				}
+			}
+			
+			for(int i=1; i <= 5; i++){
+				if(((newMetrics[i] - currentMetrics[i])/ Math.abs(currentMetrics[i]))*100 > 0){
+					return true;
+				}
+			}
+		}
+		
+		// Absolute Calibration #3		
+		else if(QMoveHandler.calibrationType.equals("Abs#3")){
+			
+			double sumOriginal=0, sumModified=0;
+			
+			for(int i=0; i <= 5; i++){
+				sumOriginal +=currentMetrics[i];
+				sumModified +=newMetrics[i];
+			}
+				
+			if(sumModified > sumOriginal){
+				return true;
+			}
+					
+			return false;
+			
+		}
+				
+		// Relative Calibration #3
+		else if(QMoveHandler.calibrationType.equals("Rel#3")){
+			
+			double sumOriginal = 0, sumModified = 0;
 
+			for (int i = 0; i <= 5; i++) {
+				sumOriginal += currentMetrics[i];
+				sumModified += newMetrics[i];
+			}
+
+			if (((sumModified - sumOriginal) / Math.abs(sumOriginal)) * 100 > 0) {
+				return true;
+			}
+			
+			return false;
+			
+		}
+				
+		// Absolute Calibration #4
+		else if(QMoveHandler.calibrationType.equals("Abs#4")){
+			
+			if(newMetrics[1] < currentMetrics[1]
+					|| newMetrics[2] < currentMetrics[2]
+					|| newMetrics[5] < currentMetrics[5]){
+					return false;
+				} else if(newMetrics[1] == currentMetrics[1]
+						&& newMetrics[2] == currentMetrics[2]
+						&& newMetrics[5] == currentMetrics[5]){
+					return false;
+				} else {
+					return true;
+				}
+		}
+				
+		// Relative Calibration #4
+		else if(QMoveHandler.calibrationType.equals("Rel#4")){
+			
+			if(((newMetrics[1] - currentMetrics[1]) / Math.abs(currentMetrics[1]))*100 < 0 
+					|| ((newMetrics[2] - currentMetrics[2]) / Math.abs(currentMetrics[2]))*100 < 0
+					|| ((newMetrics[5] - currentMetrics[5]) / Math.abs(currentMetrics[5]))*100 < 0){
+					return false;
+				} else if(((newMetrics[1] - currentMetrics[1]) / Math.abs(currentMetrics[1]))*100 == 0
+						&& ((newMetrics[2] - currentMetrics[2]) / Math.abs(currentMetrics[2]))*100 == 0
+						&& ((newMetrics[5] - currentMetrics[5]) / Math.abs(currentMetrics[5]))*100 == 0){
+					return false;
+				} else {
+					return true;
+			}
+			
+		}
+				
+		// Absolute Calibration #5
+		else if(QMoveHandler.calibrationType.equals("Abs#5")){
+			
+			if(newMetrics[6] < currentMetrics[6]
+					|| newMetrics[7] < currentMetrics[7]
+					|| newMetrics[8] > currentMetrics[8]){
+					return false;
+				} else if(newMetrics[6] == currentMetrics[6]
+						&& newMetrics[7] == currentMetrics[7]
+						&& newMetrics[8] == currentMetrics[8]){
+					return false;
+				} else {
+					return true;
+				}
+		}
+				
+		// Relative Calibration #5
+		else if(QMoveHandler.calibrationType.equals("Rel#5")){
+			
+			if(((newMetrics[6]-currentMetrics[6])/Math.abs(currentMetrics[6]))*100 < 0
+					|| ((newMetrics[7]-currentMetrics[7])/Math.abs(currentMetrics[7]))*100 < 0
+					|| ((currentMetrics[8]-newMetrics[8])/Math.abs(newMetrics[8]))*100 < 0){
+					return false;
+				} else if(((newMetrics[6]-currentMetrics[6])/Math.abs(currentMetrics[6]))*100 == 0
+						&& ((newMetrics[7]-currentMetrics[7])/Math.abs(currentMetrics[7]))*100 == 0
+						&& ((currentMetrics[8]-newMetrics[8])/Math.abs(newMetrics[8]))*100 < 0){
+					return false;
+				} else {
+					return true;
+			}
+			
+		}
+		
 		return false;
+
 	}
 
 	private ValidMove foundBestTarget(ArrayList<ValidMove> potentials) {
