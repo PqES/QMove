@@ -1,5 +1,6 @@
 package qmove.handlers;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 
 import javax.swing.JOptionPane;
@@ -16,6 +17,8 @@ import org.eclipse.core.resources.IResourceVisitor;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IMethod;
@@ -26,8 +29,12 @@ import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.internal.core.JavaProject;
 import org.eclipse.jface.dialogs.MessageDialog;
+import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.eclipse.jface.viewers.TreeSelection;
+import org.eclipse.ui.IWorkbench;
+import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.handlers.HandlerUtil;
+import org.eclipse.ui.progress.IProgressService;
 
 import qmove.ast.ClassMethodVisitor;
 import qmove.checker.MethodMetricsChecker;
@@ -46,6 +53,8 @@ public class QMoveHandler extends AbstractHandler {
 	private ArrayList<IType> allTypes;
 	private ArrayList<IMethod> allMethods;
 	private ArrayList<MethodTargets> allPossibleRefactorings;
+	private QMOOD qmood;
+	private MethodMetricsChecker mmc;
 	public static ArrayList<Recommendation> recommendations;
 	public static IJavaProject projectOriginal;
 	public static IJavaProject projectCopy;
@@ -53,112 +62,154 @@ public class QMoveHandler extends AbstractHandler {
 
 	@Override
 	public Object execute(ExecutionEvent event) throws ExecutionException {
-		
+
 		try {
-			
+
 			allTypes = new ArrayList<IType>();
 			allMethods = new ArrayList<IMethod>();
 			allPossibleRefactorings = new ArrayList<MethodTargets>();
-						
 
 			// hide view if is open
 			ViewUtils.hideView();
 
 			// get selected project from project/package explorer
 			projectOriginal = getProjectFromWorkspace(event);
-			
+
 			// if null, throw a NullPointerException and stop execution
 			projectOriginal.exists();
-			
+
 			// choosing a calibration type
 			calibrationType = showCalibrationDialog();
-			
+
 			// if null, throw a NullPointerException and stop execution
 			calibrationType.isEmpty();
 
-			// clone project
-			System.out.print("Cloning project... ");
-			projectCopy = cloneProject(projectOriginal.getProject());
-			System.out.println("OK!");
+			// progress bar
+			IWorkbench wb = PlatformUI.getWorkbench();
+			IProgressService ps = wb.getProgressService();
+			ps.busyCursorWhile(new IRunnableWithProgress() {
+				public void run(IProgressMonitor monitor) throws InvocationTargetException, InterruptedException {
 
-			// get all classes and methods from project
-			System.out.print("Getting project classes and methods...... ");
-			getAllClassesAndMethods(projectCopy);
-			System.out.println("OK!");
+					try {
 
-			// calculate all current metrics
-			System.out.print("Calculating current metrics... ");
-			QMOOD qmood = new QMOOD(allTypes);
-			System.out.println("OK!");
+						monitor.beginTask("Cloning project and getting its classes and methods...",
+								IProgressMonitor.UNKNOWN);
 
-			// get all methods that can be moved
-			MethodMetricsChecker mmc = new MethodMetricsChecker(qmood);
-			MethodTargets mtAux;
-			for (IMethod method : allMethods) {
-				mtAux = MoveMethodUtils.canMoveMethod(method);
-				if (mtAux != null) {
-					allPossibleRefactorings.add(mtAux);
-				}
-			}
+						// clone project
+						projectCopy = cloneProject(projectOriginal.getProject());
 
-			// turn objects visible to garbage collector if possible
-			allMethods = null;
-			mtAux = null;
+						// get all classes and methods from project
+						getAllClassesAndMethods(projectCopy, monitor);
 
-			// variable for the recommendations id
-			int count = 0, countID;
+						// calculate all current metrics
+						monitor.beginTask("Calculating current metrics...", IProgressMonitor.UNKNOWN);
+						qmood = new QMOOD(allTypes, monitor);
+						checkIfCanceled(monitor);
 
-			// find best move method refactoring sequence
-			while (!allPossibleRefactorings.isEmpty()) {
+						// get all methods that can be moved
+						int methodsCount = 0;
+						monitor.beginTask("Analyzing from all methods the ones that can be moved automatically (" + methodsCount
+								+ "/" + allMethods.size() + ")", allMethods.size());
 
-				System.out.println("Current QMOOD metrics");
-				printMetrics(qmood);
+						mmc = new MethodMetricsChecker(qmood);
+						MethodTargets mtAux;
+						for (IMethod method : allMethods) {
+							mtAux = MoveMethodUtils.canMoveMethod(method);
+							if (mtAux != null) {
+								allPossibleRefactorings.add(mtAux);
+							}
 
-				ValidMove bestRefactoring = null, actualRefactoring;
-
-				// set current metrics
-				mmc.setMetrics(qmood.getQMOODAttributes());
-				
-				countID=0;
-				for (MethodTargets mt : allPossibleRefactorings) {
-					countID++;
-					System.out.println("---------------------------------------------------");
-					System.out.println("Method "+countID+" of "+allPossibleRefactorings.size());
-					actualRefactoring = mmc.refactorAndCalculateMetrics(mt);
-					if (actualRefactoring != null) {
-
-						FileUtils.writeBetterMethod(
-								actualRefactoring.getMethod().getDeclaringType().getFullyQualifiedName() + "::"
-										+ actualRefactoring.getMethod().getElementName(),
-								actualRefactoring.getTarget(), actualRefactoring.getIncrease(),
-								actualRefactoring.getNewMetrics());
-
-						if (bestRefactoring == null) {
-							bestRefactoring = actualRefactoring;
-						} else if (actualRefactoring.getIncrease() > bestRefactoring.getIncrease()) {
-							bestRefactoring = actualRefactoring;
+							monitor.worked(1);
+							checkIfCanceled(monitor);
+							methodsCount++;
+							monitor.setTaskName("Analyzing methods that can be moved automatically (" + methodsCount
+									+ "/" + allMethods.size() + ")");
 						}
+
+						// turn objects visible to garbage collector if possible
+						allMethods = null;
+						mtAux = null;
+
+						// find best move method refactoring sequence
+						// variable for the recommendations id
+						int count = 0, countID, size = allPossibleRefactorings.size();
+
+						while (!allPossibleRefactorings.isEmpty()) {
+
+							countID = 0;
+
+							monitor.beginTask(
+									"Refactoring " + (countID) + " of " + allPossibleRefactorings.size()
+											+ " (Iteration " + (count + 1) + " of " + size
+											+ " - execution may stop before " + size + " iterations)",
+									allPossibleRefactorings.size());
+
+							System.out.println("Current QMOOD metrics");
+							printMetrics(qmood);
+
+							ValidMove bestRefactoring = null, actualRefactoring;
+
+							// set current metrics
+							mmc.setMetrics(qmood.getQMOODAttributes());
+
+							for (MethodTargets mt : allPossibleRefactorings) {
+								countID++;
+								System.out.println("---------------------------------------------------");
+								System.out.println("Method " + countID + " of " + allPossibleRefactorings.size());
+								actualRefactoring = mmc.refactorAndCalculateMetrics(mt);
+								monitor.worked(1);
+								checkIfCanceled(monitor);
+								monitor.setTaskName("Refactoring " + (countID) + " of " + allPossibleRefactorings.size()
+										+ " (Iteration " + (count + 1) + " of " + size + " - execution may stop before "
+										+ size + " iterations)");
+
+								if (monitor != null && monitor.isCanceled()) {
+									if (monitor != null)
+										monitor.done();
+									throw new OperationCanceledException();
+								}
+								if (actualRefactoring != null) {
+
+									FileUtils.writeBetterMethod(
+											actualRefactoring.getMethod().getDeclaringType().getFullyQualifiedName()
+													+ "::" + actualRefactoring.getMethod().getElementName(),
+											actualRefactoring.getTarget(), actualRefactoring.getIncrease(),
+											actualRefactoring.getNewMetrics());
+
+									if (bestRefactoring == null) {
+										bestRefactoring = actualRefactoring;
+									} else if (actualRefactoring.getIncrease() > bestRefactoring.getIncrease()) {
+										bestRefactoring = actualRefactoring;
+									}
+								}
+							}
+
+							if (bestRefactoring == null) {
+								allPossibleRefactorings.clear();
+							} else {
+
+								FileUtils.writeRecommendation(++count,
+										bestRefactoring.getMethod().getDeclaringType().getFullyQualifiedName() + "::"
+												+ bestRefactoring.getMethod().getElementName(),
+										bestRefactoring.getTarget(), bestRefactoring.getOldMetrics(),
+										bestRefactoring.getNewMetrics(), bestRefactoring.getIncrease(),
+										bestRefactoring.getMethod().getParameterTypes());
+
+								MoveMethodUtils.moveBestMethod(bestRefactoring.getMethod(),
+										bestRefactoring.getTarget());
+								qmood.recalculateMetrics(bestRefactoring.getTypes());
+								IMethod bestMethod = bestRefactoring.getMethod();
+								allPossibleRefactorings.removeIf(filter -> filter.getMethod().equals(bestMethod));
+							}
+
+						}
+					} catch (CoreException e) {
+						e.printStackTrace();
 					}
+
 				}
 
-				if (bestRefactoring == null) {
-					allPossibleRefactorings.clear();
-				} else {
-
-					FileUtils.writeRecommendation(++count,
-							bestRefactoring.getMethod().getDeclaringType().getFullyQualifiedName() + "::"
-									+ bestRefactoring.getMethod().getElementName(),
-							bestRefactoring.getTarget(), bestRefactoring.getOldMetrics(),
-							bestRefactoring.getNewMetrics(), bestRefactoring.getIncrease(),
-							bestRefactoring.getMethod().getParameterTypes());
-
-					MoveMethodUtils.moveBestMethod(bestRefactoring.getMethod(), bestRefactoring.getTarget());
-					qmood.recalculateMetrics(bestRefactoring.getTypes());
-					IMethod bestMethod = bestRefactoring.getMethod();
-					allPossibleRefactorings.removeIf(filter -> filter.getMethod().equals(bestMethod));
-				}
-
-			}
+			});
 
 			// delete project copy
 			projectCopy.getProject().delete(true, SingletonNullProgressMonitor.getNullProgressMonitor());
@@ -171,11 +222,33 @@ public class QMoveHandler extends AbstractHandler {
 
 		} catch (CoreException e) {
 			e.printStackTrace();
-		} catch (NullPointerException e){
+		} catch (NullPointerException e) {
 			return null;
+		} catch (InvocationTargetException e) {
+			e.printStackTrace();
+		} catch (InterruptedException e) {
+			try {
+				projectCopy.getProject().delete(true, SingletonNullProgressMonitor.getNullProgressMonitor());
+			} catch (CoreException e1) {
+				e1.printStackTrace();
+			}
+		} catch (OperationCanceledException e) {
+			try {
+				projectCopy.getProject().delete(true, SingletonNullProgressMonitor.getNullProgressMonitor());
+			} catch (CoreException e1) {
+				e1.printStackTrace();
+			}
 		}
 
 		return null;
+	}
+
+	private void checkIfCanceled(IProgressMonitor monitor) {
+		if (monitor != null && monitor.isCanceled()) {
+			if (monitor != null)
+				monitor.done();
+			throw new OperationCanceledException();
+		}
 	}
 
 	private void printMetrics(QMOOD qmood) {
@@ -187,9 +260,11 @@ public class QMoveHandler extends AbstractHandler {
 		System.out.println(" UND = " + qmood.getUnd());
 	}
 
-	private void getAllClassesAndMethods(final IJavaProject jprojectCopy) throws CoreException {
+	private void getAllClassesAndMethods(final IJavaProject jprojectCopy, IProgressMonitor monitor)
+			throws CoreException {
 
 		try {
+
 			jprojectCopy.getProject().accept(new IResourceVisitor() {
 
 				@Override
@@ -207,6 +282,7 @@ public class QMoveHandler extends AbstractHandler {
 						}
 
 					}
+					checkIfCanceled(monitor);
 					return true;
 				}
 			});
@@ -232,6 +308,7 @@ public class QMoveHandler extends AbstractHandler {
 						}
 					}
 				}
+				checkIfCanceled(monitor);
 			}
 		}
 	}
@@ -282,20 +359,14 @@ public class QMoveHandler extends AbstractHandler {
 
 		return JavaCore.create(clone);
 	}
-	
-	private String showCalibrationDialog(){
-		
-		Object[] possibilities = {"Abs#1", "Rel#1", "Abs#2", "Rel#2", "Abs#3", "Rel#3", "Abs#4", "Rel#4", "Abs#5", "Rel#5"};
-		
-		
-		String s = (String)JOptionPane.showInputDialog(
-							null,
-		                    "Choose the calibration type you prefer:\n",		                    
-		                    "Choose a Calibration",
-		                    JOptionPane.PLAIN_MESSAGE,
-		                    null,
-		                    possibilities,
-		                    possibilities[5]);
+
+	private String showCalibrationDialog() {
+
+		Object[] possibilities = { "Abs#1", "Rel#1", "Abs#2", "Rel#2", "Abs#3", "Rel#3", "Abs#4", "Rel#4", "Abs#5",
+				"Rel#5" };
+
+		String s = (String) JOptionPane.showInputDialog(null, "Choose the calibration type you prefer:\n",
+				"Choose a Calibration", JOptionPane.PLAIN_MESSAGE, null, possibilities, possibilities[5]);
 		return s;
 	}
 }

@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
 
@@ -35,13 +37,14 @@ public class QMOOD {
 
 	private Map<String, Metrics> allClassesMetrics = new HashMap<String, Metrics>();
 
-	public QMOOD(ArrayList<IType> types) {
+	public QMOOD(ArrayList<IType> types, IProgressMonitor monitor) {
 
-		calculeQMOODProperties(types);
-		calculeQMOODAttributes();
+		calculeQMOODProperties(types, monitor);
+		checkIfCanceled(monitor);
+		calculeQMOODAttributes(monitor);
 	}
 
-	public void calculeQMOODProperties(ArrayList<IType> types) {
+	public void calculeQMOODProperties(ArrayList<IType> types, IProgressMonitor monitor) {
 		for (int i = 0; i < types.size(); i++) {
 
 			allClassesMetrics.put(types.get(i).getFullyQualifiedName(), new Metrics(DesignSizeInClasses.calcule(types),
@@ -51,10 +54,12 @@ public class QMOOD {
 					MeasureOfFunctionalAbstraction.calcule(types.get(i)),
 					NumberOfPolymorphicMethods.calcule(types.get(i)), ClassInterfaceSize.calcule(types.get(i)),
 					NumberOfMethods.calcule(types.get(i))));
+			
+			checkIfCanceled(monitor);
 		}
 	}
 
-	public void calculeQMOODAttributes() {
+	public void calculeQMOODAttributes(IProgressMonitor monitor) {
 
 		dsc = allClassesMetrics.size();
 
@@ -73,6 +78,7 @@ public class QMOOD {
 			nom += m.getNom();
 		}
 
+		checkIfCanceled(monitor);
 		calculateAttributes();
 
 	}
@@ -316,5 +322,12 @@ public class QMOOD {
 	public void setUnd(double und) {
 		this.und = und;
 	}
-
+	
+	private void checkIfCanceled(IProgressMonitor monitor) {
+		if (monitor != null && monitor.isCanceled()) {
+			if (monitor != null)
+				monitor.done();
+			throw new OperationCanceledException();
+		}
+	}
 }
