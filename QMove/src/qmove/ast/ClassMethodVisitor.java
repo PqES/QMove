@@ -22,7 +22,7 @@ public class ClassMethodVisitor extends ASTVisitor {
 
 	public ClassMethodVisitor(ICompilationUnit unit) throws JavaModelException {
 
-		ASTParser parser = ASTParser.newParser(AST.JLS8);
+		ASTParser parser = ASTParser.newParser(AST.JLS10);
 		parser.setKind(ASTParser.K_COMPILATION_UNIT);
 		parser.setSource(unit);
 		parser.setCompilerOptions(JavaCore.getOptions());

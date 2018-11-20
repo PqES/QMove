@@ -100,7 +100,7 @@ public class MeasureOfAggregation {
 
 	private static CompilationUnit getAST(IType type) {
 		try {
-			ASTParser parser = ASTParser.newParser(AST.JLS8);
+			ASTParser parser = ASTParser.newParser(AST.JLS10);
 			parser.setKind(ASTParser.K_COMPILATION_UNIT);
 			parser.setResolveBindings(true);
 			parser.setBindingsRecovery(true);

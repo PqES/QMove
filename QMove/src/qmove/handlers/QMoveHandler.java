@@ -257,6 +257,7 @@ public class QMoveHandler extends AbstractHandler {
 		}
 	}
 
+	@SuppressWarnings("deprecation")
 	private IJavaProject cloneProject(IProject iProject) throws CoreException {
 
 		IWorkspaceRoot workspaceRoot = ResourcesPlugin.getWorkspace().getRoot();

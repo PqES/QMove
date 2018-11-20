@@ -60,7 +60,7 @@ public class MoveMethodUtils {
 
 					if (candidate.getType().isEnum() || candidate.getType().isInterface()
 							|| candidate.getType().isGenericType()) {
-						System.out.println("It is enumerated, interface or generic");
+						System.out.println("Did not pass the preconditions");
 						continue;
 					}
 
