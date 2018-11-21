@@ -8,6 +8,7 @@ import qmove.handlers.QMoveHandler;
 import qmove.metrics.qmood.calculator.QMOOD;
 import qmove.persistence.MethodTargets;
 import qmove.persistence.ValidMove;
+import qmove.utils.Log;
 import qmove.utils.MoveMethodUtils;
 import qmove.utils.SingletonNullProgressMonitor;
 
@@ -26,8 +27,8 @@ public class MethodMetricsChecker {
 		try {
 
 			ArrayList<ValidMove> validMoves = null;
-			System.out.println("---------------------------------------------------");
-			System.out.println("Analyzing method " + m.getMethod().getElementName() + " in "
+			Log.writeLog("---------------------------------------------------");
+			Log.writeLog("Analyzing method " + m.getMethod().getElementName() + " in "
 					+ m.getMethod().getDeclaringType().getElementName());
 
 			// Array for already found targets for method
@@ -36,9 +37,9 @@ public class MethodMetricsChecker {
 			// loop for each target that method go and come back
 			for (IVariableBinding candidate : arrayTargets) {
 
-				System.out.print("Going to " + candidate.getType().getName() + "... ");
+				Log.writeLog("Going to " + candidate.getType().getName() + "... ");
 				PerformChangeOperation perform = MoveMethodUtils.moveCandidate(m.getMethod(), candidate);
-				System.out.println("OK");
+				Log.writeLog("OK");
 
 				// get method and candidate classes and recalculate metrics
 				ArrayList<String> types = new ArrayList<String>();
@@ -50,9 +51,9 @@ public class MethodMetricsChecker {
 				printMetrics(qmood);
 
 				// undo move method
-				System.out.print("Returning method to original class... ");
+				Log.writeLog("Returning method to original class... ");
 				perform.getUndoChange().perform(SingletonNullProgressMonitor.getNullProgressMonitor());
-				System.out.println("OK");
+				Log.writeLog("OK");
 
 				// recalculate metrics after method come back
 				qmood.recalculateMetrics(types);
@@ -60,7 +61,7 @@ public class MethodMetricsChecker {
 
 				// verify if metrics increased
 				if (hadMetricsIncreased()) {
-					System.out.println("Improves Metrics");
+					Log.writeLog("Improves Metrics");
 
 					if (validMoves == null) {
 						validMoves = new ArrayList<ValidMove>();
@@ -70,7 +71,7 @@ public class MethodMetricsChecker {
 							newMetrics, types));
 
 				} else {
-					System.out.println("Worsens the metrics");
+					Log.writeLog("Worsens the metrics");
 				}
 
 			}
@@ -287,11 +288,7 @@ public class MethodMetricsChecker {
 	}
 
 	private void printMetrics(QMOOD qmood) {
-		System.out.print("EFE = " + qmood.getEfe());
-		System.out.print(" EXT = " + qmood.getExt());
-		System.out.print(" FLE = " + qmood.getFle());
-		System.out.print(" FUN = " + qmood.getFun());
-		System.out.print(" REU = " + qmood.getReu());
-		System.out.println(" UND = " + qmood.getUnd());
+		Log.writeLog("EFE = " + qmood.getEfe() + " EXT = " + qmood.getExt() + " FLE = " + qmood.getFle() + " FUN = "
+				+ qmood.getFun() + " REU = " + qmood.getReu() + " UND = " + qmood.getUnd());
 	}
 }

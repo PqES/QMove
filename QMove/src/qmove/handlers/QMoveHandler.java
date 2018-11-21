@@ -43,6 +43,7 @@ import qmove.persistence.MethodTargets;
 import qmove.persistence.Recommendation;
 import qmove.persistence.ValidMove;
 import qmove.utils.FileUtils;
+import qmove.utils.Log;
 import qmove.utils.MoveMethodUtils;
 import qmove.utils.SingletonNullProgressMonitor;
 import qmove.utils.ViewUtils;
@@ -91,25 +92,30 @@ public class QMoveHandler extends AbstractHandler {
 				public void run(IProgressMonitor monitor) throws InvocationTargetException, InterruptedException {
 
 					try {
-
+						
+						// (re)create log file
+						Log.refreshLog();
+						
+						// clone project
+						Log.writeLog("Cloning project and getting its classes and methods");
 						monitor.beginTask("Cloning project and getting its classes and methods...",
 								IProgressMonitor.UNKNOWN);
-
-						// clone project
 						projectCopy = cloneProject(projectOriginal.getProject());
 
 						// get all classes and methods from project
 						getAllClassesAndMethods(projectCopy, monitor);
 
 						// calculate all current metrics
+						Log.writeLog("Calculating current metrics");
 						monitor.beginTask("Calculating current metrics...", IProgressMonitor.UNKNOWN);
 						qmood = new QMOOD(allTypes, monitor);
 						checkIfCanceled(monitor);
 
 						// get all methods that can be moved
 						int methodsCount = 0;
-						monitor.beginTask("Analyzing from all methods the ones that can be moved automatically (" + methodsCount
-								+ "/" + allMethods.size() + ")", allMethods.size());
+						Log.writeLog("Analyzing methods that can be moved automatically");
+						monitor.beginTask("Analyzing methods that can be moved automatically (" + methodsCount + "/"
+								+ allMethods.size() + ")", allMethods.size());
 
 						mmc = new MethodMetricsChecker(qmood);
 						MethodTargets mtAux;
@@ -144,7 +150,7 @@ public class QMoveHandler extends AbstractHandler {
 											+ " - execution may stop before " + size + " iterations)",
 									allPossibleRefactorings.size());
 
-							System.out.println("Current QMOOD metrics");
+							Log.writeLog("Current QMOOD metrics");
 							printMetrics(qmood);
 
 							ValidMove bestRefactoring = null, actualRefactoring;
@@ -154,8 +160,8 @@ public class QMoveHandler extends AbstractHandler {
 
 							for (MethodTargets mt : allPossibleRefactorings) {
 								countID++;
-								System.out.println("---------------------------------------------------");
-								System.out.println("Method " + countID + " of " + allPossibleRefactorings.size());
+								Log.writeLog("---------------------------------------------------");
+								Log.writeLog("Method " + countID + " of " + allPossibleRefactorings.size());
 								actualRefactoring = mmc.refactorAndCalculateMetrics(mt);
 								monitor.worked(1);
 								checkIfCanceled(monitor);
@@ -220,23 +226,28 @@ public class QMoveHandler extends AbstractHandler {
 			// open view
 			ViewUtils.openView();
 
+			// delete log
+			Log.closeLog();
+
 		} catch (CoreException e) {
-			e.printStackTrace();
+			Log.writeError(e);
 		} catch (NullPointerException e) {
-			return null;
+			Log.writeError(e);
 		} catch (InvocationTargetException e) {
-			e.printStackTrace();
+			Log.writeError(e);
 		} catch (InterruptedException e) {
 			try {
+				Log.writeError(e);
 				projectCopy.getProject().delete(true, SingletonNullProgressMonitor.getNullProgressMonitor());
 			} catch (CoreException e1) {
-				e1.printStackTrace();
+				Log.writeError(e);
 			}
 		} catch (OperationCanceledException e) {
 			try {
+				Log.writeError(e);
 				projectCopy.getProject().delete(true, SingletonNullProgressMonitor.getNullProgressMonitor());
 			} catch (CoreException e1) {
-				e1.printStackTrace();
+				Log.writeError(e);
 			}
 		}
 
@@ -252,12 +263,8 @@ public class QMoveHandler extends AbstractHandler {
 	}
 
 	private void printMetrics(QMOOD qmood) {
-		System.out.print("EFE = " + qmood.getEfe());
-		System.out.print(" EXT = " + qmood.getExt());
-		System.out.print(" FLE = " + qmood.getFle());
-		System.out.print(" FUN = " + qmood.getFun());
-		System.out.print(" REU = " + qmood.getReu());
-		System.out.println(" UND = " + qmood.getUnd());
+		Log.writeLog("EFE = " + qmood.getEfe() + " EXT = " + qmood.getExt() + " FLE = " + qmood.getFle() + " FUN = "
+				+ qmood.getFun() + " REU = " + qmood.getReu() + " UND = " + qmood.getUnd());
 	}
 
 	private void getAllClassesAndMethods(final IJavaProject jprojectCopy, IProgressMonitor monitor)

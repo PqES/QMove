@@ -27,11 +27,10 @@ public class MoveMethodUtils {
 		ArrayList<String> validTargets;
 
 		try {
-
-			System.out.println("------------------------------------------------------------------------");
-			System.out.print("Trying method " + method.getElementName() + "... ");
+			Log.writeLog("------------------------------------------------------------------------");
+			Log.writeLog("Trying method " + method.getElementName() + "... ");
 			if (method.isConstructor()) {
-				System.out.println("is constructor!");
+				Log.writeLog("Is constructor!");
 				return null;
 			}
 
@@ -43,7 +42,7 @@ public class MoveMethodUtils {
 			IVariableBinding[] targets = processor.getPossibleTargets();
 
 			if (targets.length == 0 || targets == null) {
-				System.out.println("Do not move to any place.");
+				Log.writeLog("Do not move to any place.");
 				return null;
 			}
 
@@ -51,27 +50,27 @@ public class MoveMethodUtils {
 
 				validTargets = new ArrayList<String>();
 
-				System.out.println();
+				Log.writeLog("");
 
 				for (int i = 0; i < targets.length; i++) {
 
 					IVariableBinding candidate = targets[i];
-					System.out.print("Destiny: " + candidate.getType().getName() + ": ");
+					Log.writeLog("Destiny: " + candidate.getType().getName() + ": ");
 
 					if (candidate.getType().isEnum() || candidate.getType().isInterface()
 							|| candidate.getType().isGenericType()) {
-						System.out.println("Did not pass the preconditions");
+						Log.writeLog("Did not pass in the preconditions");
 						continue;
 					}
 
 					if (candidate.getType().getQualifiedName()
 							.equals(method.getDeclaringType().getFullyQualifiedName())) {
-						System.out.println("Destination is the same class as the method already located");
+						Log.writeLog("Destination is the same class as the method already located");
 						continue;
 					}
 
 					if (validTargets.contains(candidate.getType().getQualifiedName())) {
-						System.out.println("This destination is already saved among the possible destinations");
+						Log.writeLog("This destination is already saved among the possible destinations");
 						continue;
 					}
 
@@ -92,14 +91,14 @@ public class MoveMethodUtils {
 
 					if (status.isOK()) {
 
-						System.out.println("OK!");
+						Log.writeLog("OK!");
 
 						validTargets.add(candidate.getType().getQualifiedName());
 
 					}
 
 					else {
-						System.out.println("Failed");
+						Log.writeLog("Failed");
 					}
 
 				}
